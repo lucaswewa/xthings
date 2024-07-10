@@ -1,6 +1,6 @@
 [project]
 name = "xthings"
-version = "0.1.0"
+version = "0.0.1"
 authors = [
   { name="Lucas Wang", email="lucas.wang@gradientsensing.com" },
 ]
@@ -24,6 +24,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+  "build",
   "types-PyYAML",
   "pytest>=8.2.0",
   "pytest-cov",
@@ -42,6 +43,15 @@ dev = [
 [build-system]
 requires = ["setuptools>=65.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+"xthings" = ["py.typed"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.distutils.bdist_wheel]
+universal = true
 
 [tool.ruff]
 target-version = "py310"
