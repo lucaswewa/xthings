@@ -13,9 +13,10 @@ from .xthing import XThing
 
 _xthings_servers: WeakSet[XThingsServer] = WeakSet()
 
+
 class XThingsServer:
-    """An XThingsServer is a FastAPI app, which can hosts one or more XThing(s)
-    """
+    """An XThingsServer is a FastAPI app, which can hosts one or more XThing(s)"""
+
     _app: FastAPI
     _lifecycle_status: Optional[str]
     _blocking_portal: Optional[BlockingPortal]
@@ -37,11 +38,11 @@ class XThingsServer:
     @property
     def xthings(self):
         return self._xthings
-        
+
     @asynccontextmanager
     async def lifespan(self, app: FastAPI):
         """Manage setup and teardown
-        
+
         This does two important things:
         * It sets up the blocking portal so background threads can run async code.
           This is important for events.
@@ -54,7 +55,6 @@ class XThingsServer:
             # attach the blocking portal to each of the XThing
             for xthing in self._xthings.values():
                 xthing._xthings_blocking_portal = portal
-
 
             async with AsyncExitStack() as stack:
                 for xthing in self._xthings.values():
