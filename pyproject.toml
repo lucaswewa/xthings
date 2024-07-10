@@ -1,0 +1,55 @@
+[project]
+name = "xthings"
+version = "0.1.0"
+authors = [
+  { name="Lucas Wang", email="lucas.wang@gradientsensing.com" },
+]
+description = "Yet Another implementation of W3C WoT"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "fastapi[all]>=0.110.3",
+  "pydantic>=2.7.1",
+  "jsonschema",
+  "pyyaml",
+  "typing_extensions",
+  "anyio ~=4.3",
+  "zeroconf>=0.132.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "types-PyYAML",
+  "pytest>=8.2.0",
+  "pytest-cov",
+  "mypy>=1.10.0, <2",
+  "ruff>=0.4.2",
+  "types-jsonschema",
+  "uvicorn>=0.29.0",
+  "numpy~=1.26",
+  "opencv-python>=4.9.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/lucaswewa/xthings"
+"Bug Tracker" = "https://github.com/lucaswewa/xthings/issues"
+
+[build-system]
+requires = ["setuptools>=65.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+target-version = "py310"
+exclude = ["examples", "tutorials"]
+
+[tool.mypy]
+plugins = ["pydantic.mypy", "numpy.typing.mypy_plugin"]
+
+[tool.coverage.run]
+omit = [
+    ]
