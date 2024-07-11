@@ -12,7 +12,7 @@ from typing import (
     Union,
     overload,
 )
-
+from typing_extensions import Self
 
 if TYPE_CHECKING:  # pragma: no cover
     from .xthing import XThing
@@ -46,8 +46,15 @@ class XThingsDescriptor(ABC):
 class PropertyDescriptor(XThingsDescriptor):
     _value: Any
 
-    def __init__(self, initial_value: Any = None):
+    def __init__(
+        self,
+        initial_value: Any = None,
+        getter: Optional[Callable] = None,
+        setter: Optional[Callable] = None,
+    ):
         self._value = initial_value
+        self._getter = getter or getattr(self, "_getter", None)
+        self._setter = setter or getattr(self, "_setter", None)
 
     def __set_name__(self, owner, name: str):
         self._name = name
@@ -55,10 +62,16 @@ class PropertyDescriptor(XThingsDescriptor):
     def __get__(self, obj, type=None):
         if obj is None:
             return self
+
+        if self._getter:
+            return self._getter(obj)
+
         return self._value
 
     def __set__(self, obj, value):
         self._value = value
+        if self._setter:
+            self._setter(obj, value)
         return self._value
 
     @property
@@ -77,6 +90,10 @@ class PropertyDescriptor(XThingsDescriptor):
             return self.__get__(xthing)
 
     def property_affordance(self, xthing: XThing, path: Optional[str] = None): ...
+
+    def setter(self, func: Callable) -> Self:
+        self._setter = func
+        return self
 
 
 class ActionDescriptor(XThingsDescriptor):
