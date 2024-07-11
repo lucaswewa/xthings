@@ -6,7 +6,7 @@ from __future__ import annotations
 from fastapi import Body, FastAPI
 from typing import TYPE_CHECKING, Annotated, Any, Optional
 
-from .xthings_descriptor import XThingsDescriptor
+from .descriptors import XThingsDescriptor
 
 if TYPE_CHECKING:  # pragma: no cover
     from .xthing import XThing

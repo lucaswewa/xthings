@@ -1,17 +1,19 @@
 from fastapi.testclient import TestClient
 import pytest
 
-from xthings.xthings_server import XThingsServer
+from xthings.server import XThingsServer
 from xthings.xthing import XThing
+
 
 def test_xthings_server_lifecycle():
     server = XThingsServer()
     with TestClient(server.app):
         assert server._lifecycle_status == "startup..."
         assert server._blocking_portal is not None
-        
+
     assert server._lifecycle_status == "shutdown..."
     assert server._blocking_portal is None
+
 
 def test_xthings_server_add_xthing():
     server = XThingsServer()
@@ -30,6 +32,7 @@ def test_xthings_server_add_xthing():
         assert r.json() == "thing_description"
     assert xthing._ut_probe == "shutdown"
     assert xthing._xthings_blocking_portal is None
+
 
 def test_xthings_server_add_xthing_twice():
     with pytest.raises(KeyError):

@@ -1,6 +1,6 @@
 from xthings.xthing import XThing
 from xthings.property import PropertyDescriptor
-from xthings.xthings_server import XThingsServer
+from xthings.server import XThingsServer
 
 
 class MyXThing(XThing):

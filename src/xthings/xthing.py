@@ -8,11 +8,11 @@ from anyio.from_thread import BlockingPortal
 from fastapi import Request
 from typing import Any, TYPE_CHECKING, Optional
 
-from .xthings_server_websocket import websocket_endpoint, WebSocket
-from .xthings_descriptor import XThingsDescriptor
+from .websocket import websocket_endpoint, WebSocket
+from .descriptors import XThingsDescriptor
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .xthings_server import XThingsServer
+    from .server import XThingsServer
 
 
 class XThing:

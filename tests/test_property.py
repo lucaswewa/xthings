@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from xthings.xthings_server import XThingsServer
+from xthings.server import XThingsServer
 from xthings.xthing import XThing
 from xthings.property import PropertyDescriptor
 
