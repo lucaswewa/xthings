@@ -4,12 +4,29 @@ Define an object to represent an XProperty, as a Python descriptor
 
 from __future__ import annotations
 from fastapi import Body, FastAPI
-from typing import TYPE_CHECKING, Annotated, Any, Optional
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Optional,
+)
+
+from xthings.xthing import XThing
 
 from .descriptors import XThingsDescriptor
 
 if TYPE_CHECKING:  # pragma: no cover
     from .xthing import XThing
+
+
+def pathjoin(pa, pb):
+    while pa.endswith("/"):
+        pa = pa[:-1]
+
+    while pb.startswith("/"):
+        pb = pb[1:]
+
+    return pa + "/" + pb
 
 
 class PropertyDescriptor(XThingsDescriptor):
@@ -35,15 +52,6 @@ class PropertyDescriptor(XThingsDescriptor):
         return self._name
 
     def add_to_app(self, app: FastAPI, xthing: XThing):
-        def pathjoin(pa, pb):
-            while pa.endswith("/"):
-                pa = pa[:-1]
-
-            while pb.startswith("/"):
-                pb = pb[1:]
-
-            return pa + "/" + pb
-
         async def set_property(body):
             return self.__set__(xthing, body)
 
