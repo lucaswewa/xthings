@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 
 from xthings.server import XThingsServer
 from xthings.xthing import XThing
-from xthings.action import ActionDescriptor
+from xthings.descriptors import ActionDescriptor
 
 
 def test_action_initialization():

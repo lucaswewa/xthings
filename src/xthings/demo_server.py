@@ -1,6 +1,5 @@
 from xthings.xthing import XThing
-from xthings.property import PropertyDescriptor
-from xthings.action import ActionDescriptor
+from xthings.descriptors import PropertyDescriptor, ActionDescriptor
 from xthings.server import XThingsServer
 
 

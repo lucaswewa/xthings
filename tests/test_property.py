@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 
 from xthings.server import XThingsServer
 from xthings.xthing import XThing
-from xthings.property import PropertyDescriptor
+from xthings.descriptors import PropertyDescriptor
 
 
 def test_property_initialization():
