@@ -22,7 +22,7 @@ class XThingsServer:
     _blocking_portal: Optional[BlockingPortal]
     _xthings: dict[str, XThing]
 
-    def __init__(self):
+    def __init__(self, settings: Optional[str] = ""):
         self._app = FastAPI(lifespan=self.lifespan)
 
         self._blocking_portal: Optional[BlockingPortal] = None
@@ -30,6 +30,7 @@ class XThingsServer:
         self._xthings: dict[str, XThing] = {}
         global _xthings_servers
         _xthings_servers.add(self)
+        print(settings)
 
     @property
     def app(self):

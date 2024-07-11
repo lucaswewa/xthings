@@ -9,6 +9,7 @@ from fastapi import Request
 from typing import Any, TYPE_CHECKING, Optional
 
 from .xthings_server_websocket import websocket_endpoint, WebSocket
+from .xthings_descriptor import XThingsDescriptor
 
 if TYPE_CHECKING:  # pragma: no cover
     from .xthings_server import XThingsServer
@@ -57,8 +58,11 @@ class XThing:
         """Add HTTP handlers to the app for this XThing"""
         self._path = path
 
+        for xdescriptor in XThingsDescriptor.get_xdescriptors(self):
+            xdescriptor.add_to_app(server.app, self)
+
         @server.app.get(
-            self._path, response_model_exclude_none=True, response_model_by_alias=True
+            self.path, response_model_exclude_none=True, response_model_by_alias=True
         )
         def thing_description(request: Request):
             return "thing_description"
