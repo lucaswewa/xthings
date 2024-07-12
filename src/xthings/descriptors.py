@@ -2,6 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from fastapi import Body, FastAPI, Request, BackgroundTasks
 from functools import partial
+from pydantic import BaseModel
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -45,13 +46,17 @@ class XThingsDescriptor(ABC):
 
 class PropertyDescriptor(XThingsDescriptor):
     _value: Any
+    model: type[BaseModel]
+    readonly: bool
 
     def __init__(
         self,
+        model: type,
         initial_value: Any = None,
         getter: Optional[Callable] = None,
         setter: Optional[Callable] = None,
     ):
+        self.model = model
         self._value = initial_value
         self._getter = getter or getattr(self, "_getter", None)
         self._setter = setter or getattr(self, "_setter", None)
@@ -59,7 +64,7 @@ class PropertyDescriptor(XThingsDescriptor):
     def __set_name__(self, owner, name: str):
         self._name = name
 
-    def __get__(self, obj, type=None):
+    def __get__(self, obj, type=None) -> Any:
         if obj is None:
             return self
 
@@ -82,10 +87,10 @@ class PropertyDescriptor(XThingsDescriptor):
         async def set_property(body):
             return self.__set__(xthing, body)
 
-        set_property.__annotations__["body"] = Annotated[int, Body()]
+        set_property.__annotations__["body"] = Annotated[self.model, Body()]
         app.put(pathjoin(xthing.path, self.name), status_code=200)(set_property)
 
-        @app.get(pathjoin(xthing.path, self.name))
+        @app.get(pathjoin(xthing.path, self.name), response_model=self.model)
         async def get_property():
             return self.__get__(xthing)
 

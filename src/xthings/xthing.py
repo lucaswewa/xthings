@@ -34,7 +34,7 @@ class XThing:
         return self
 
     def __exit__(self, *args):
-        self.shutdown()
+        self.teardown()
 
     @property
     def path(self):
@@ -47,7 +47,7 @@ class XThing:
         """
         self._ut_probe = "setup"
 
-    def shutdown(self):
+    def teardown(self):
         """Shutdown the XThing hardware or other deinitialization operations
 
         Subclass should override this method.
