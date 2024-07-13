@@ -1,9 +1,10 @@
 from xthings.xthing import XThing
 from xthings.descriptors import PropertyDescriptor, ActionDescriptor
 from xthings.server import XThingsServer
-from xthings.decorators import xthings_property
+from xthings.decorators import xthings_property, xthings_action
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
+from typing import Optional
 
 
 class User(BaseModel):
@@ -11,11 +12,11 @@ class User(BaseModel):
     name: str
 
 
-def func(xthing, s):
+def func(xthing, s: User):
     import time
 
     print(f"start to sleep {s} seconds")
-    time.sleep(s)
+    time.sleep(s.id)
     xthing.foo = s
     print("end")
 
@@ -26,7 +27,7 @@ user2 = User(id=2, name="John")
 
 class MyXThing(XThing):
     foo = PropertyDescriptor(User, User(id=1, name="John"))
-    bar = ActionDescriptor(func)
+    bar = ActionDescriptor(func, input_model=User)
     _xyz: User
 
     def setup(self):
@@ -40,6 +41,16 @@ class MyXThing(XThing):
     @xyz.setter  # type: ignore[no-redef]
     def xyz(self, v):
         self._xyz = v
+
+    @xthings_action(input_model=User, output_model=User)
+    def func(self, s: User):
+        import time
+
+        print(f"start to sleep {s} seconds")
+        time.sleep(s.id)
+        self.foo = s
+        print("end")
+        return s
 
 
 xthings_server = XThingsServer()
@@ -88,6 +99,7 @@ html = """
 {"messageType": "addPropertyObservation", "data": {"xyz": true}}
 {"messageType": "addPropertyObservation", "data": {"foo": true}}
 """
+
 
 @app.get("/wsclient", tags=["websockets"])
 async def get():

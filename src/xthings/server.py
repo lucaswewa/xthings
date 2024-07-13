@@ -10,6 +10,7 @@ from typing import Optional
 from weakref import WeakSet
 
 from .xthing import XThing
+from .action_manager import ActionManager
 
 _xthings_servers: WeakSet[XThingsServer] = WeakSet()
 
@@ -25,6 +26,7 @@ class XThingsServer:
     def __init__(self, settings: Optional[str] = ""):
         self._app = FastAPI(lifespan=self.lifespan)
 
+        self._action_manager = ActionManager().attach_to_app(self._app)
         self._blocking_portal: Optional[BlockingPortal] = None
         self._lifecycle_status: str = None
         self._xthings: dict[str, XThing] = {}
@@ -39,6 +41,10 @@ class XThingsServer:
     @property
     def xthings(self):
         return self._xthings
+
+    @property
+    def action_manager(self):
+        return self._action_manager
 
     @asynccontextmanager
     async def lifespan(self, app: FastAPI):

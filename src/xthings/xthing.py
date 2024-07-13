@@ -41,6 +41,10 @@ class XThing:
     def path(self):
         return self._path
 
+    @property
+    def action_manager(self):
+        return self._action_manager
+
     def setup(self):
         """Setup the XThing hardware or other initialization operations
 
@@ -58,6 +62,7 @@ class XThing:
     def attach_to_app(self, server: XThingsServer, path: str):
         """Add HTTP handlers to the app for this XThing"""
         self._path = path
+        self._action_manager = server.action_manager
 
         for xdescriptor in XThingsDescriptor.get_xdescriptors(self):
             xdescriptor.add_to_app(server.app, self)
@@ -76,9 +81,13 @@ class XThing:
         if attr not in self._observers.keys():
             self._observers[attr] = WeakSet()
         return self._observers[attr]
-    
-    def add_observer_by_attr(self, attr: str, observer_stream: ObjectSendStream) -> None:
+
+    def add_observer_by_attr(
+        self, attr: str, observer_stream: ObjectSendStream
+    ) -> None:
         self.observers(attr).add(observer_stream)
 
-    def remove_observer_by_attr(self, attr: str, observer_stream: ObjectSendStream) -> None:
+    def remove_observer_by_attr(
+        self, attr: str, observer_stream: ObjectSendStream
+    ) -> None:
         self.observers(attr).remove(observer_stream)
