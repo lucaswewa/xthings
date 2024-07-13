@@ -5,9 +5,10 @@ The XThing class
 from __future__ import annotations
 from anyio.to_thread import run_sync
 from anyio.from_thread import BlockingPortal
+from anyio.abc import ObjectSendStream
 from fastapi import Request
 from typing import Any, TYPE_CHECKING, Optional
-
+from weakref import WeakSet
 from .websocket import websocket_endpoint, WebSocket
 from .descriptors import XThingsDescriptor
 
@@ -16,9 +17,9 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class XThing:
-    _path: Optional[str] = None
+    _path: str
     _xthings_blocking_portal: Optional[BlockingPortal] = None
-
+    _observers: dict[str, WeakSet[ObjectSendStream]] = {}
     _ut_probe: Any
 
     async def __aenter__(self):
@@ -70,3 +71,14 @@ class XThing:
         @server.app.websocket(self.path + "/ws")
         async def websocket(ws: WebSocket):
             await websocket_endpoint(self, ws)
+
+    def observers(self, attr: str) -> WeakSet[ObjectSendStream[Any]]:
+        if attr not in self._observers.keys():
+            self._observers[attr] = WeakSet()
+        return self._observers[attr]
+    
+    def add_observer_by_attr(self, attr: str, observer_stream: ObjectSendStream) -> None:
+        self.observers(attr).add(observer_stream)
+
+    def remove_observer_by_attr(self, attr: str, observer_stream: ObjectSendStream) -> None:
+        self.observers(attr).remove(observer_stream)

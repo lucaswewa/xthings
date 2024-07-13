@@ -16,7 +16,6 @@ from typing import (
     overload,
 )
 from typing_extensions import Self
-from weakref import WeakSet
 
 if TYPE_CHECKING:  # pragma: no cover
     from .xthing import XThing
@@ -91,13 +90,12 @@ class PropertyDescriptor(XThingsDescriptor):
 
     async def emit_changed_event_async(self, xthing: XThing, value: Any):
         try:
-            observers = xthing.__dict__[self.name]
-            for observer in observers:
+            for observer in xthing.observers(self.name):
                 await observer.send(
                     {"messageType": "propertyStatus", "data": {self.name: value}}
                 )
-        except Exception:
-            print("error")
+        except Exception as e:
+            print("error", str(e))
 
     @property
     def name(self):

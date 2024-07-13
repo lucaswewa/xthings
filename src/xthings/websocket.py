@@ -49,8 +49,7 @@ def dispatch_message(data, send_stream: ObjectSendStream, xthing: XThing):
     try:
         if data["messageType"] == "addPropertyObservation":
             for key in data["data"].keys():
-                # TODO: xthing.observe_property(k, send_stream)
-                xthing.__dict__[key] = send_stream
+                xthing.add_observer_by_attr(key, send_stream)
         elif data["messageType"] == "addActionObservation":
             for k in data["data"].keys():
                 # TODO: xthing.observe_property(k, send_stream)

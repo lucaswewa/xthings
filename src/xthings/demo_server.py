@@ -84,6 +84,10 @@ html = """
 </html>
 """
 
+"""
+{"messageType": "addPropertyObservation", "data": {"xyz": true}}
+{"messageType": "addPropertyObservation", "data": {"foo": true}}
+"""
 
 @app.get("/wsclient", tags=["websockets"])
 async def get():

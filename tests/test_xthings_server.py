@@ -18,7 +18,6 @@ def test_xthings_server_lifecycle():
 def test_xthings_server_add_xthing():
     server = XThingsServer()
     xthing = XThing()
-    assert xthing.path is None
     server.add_xthing(xthing, "/xthing")
     assert xthing.path == "/xthing"
     assert xthing._xthings_blocking_portal is None
