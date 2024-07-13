@@ -27,7 +27,7 @@ user2 = User(id=2, name="John")
 
 class MyXThing(XThing):
     foo = PropertyDescriptor(User, User(id=1, name="John"))
-    bar = ActionDescriptor(func, input_model=User)
+    bar = ActionDescriptor(func, input_model=User, output_model=User)
     _xyz: User
 
     def setup(self):
