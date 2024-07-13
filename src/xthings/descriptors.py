@@ -1,5 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+import anyio
+import anyio.from_thread
 from fastapi import Body, FastAPI, Request, BackgroundTasks
 from functools import partial
 from pydantic import BaseModel
@@ -14,6 +16,7 @@ from typing import (
     overload,
 )
 from typing_extensions import Self
+from weakref import WeakSet
 
 if TYPE_CHECKING:  # pragma: no cover
     from .xthing import XThing
@@ -77,21 +80,38 @@ class PropertyDescriptor(XThingsDescriptor):
         self._value = value
         if self._setter:
             self._setter(obj, value)
-        return self._value
+
+        self.emit_changed_event(obj, value)
+
+    def emit_changed_event(self, xthing: XThing, value: Any):
+        try:
+            anyio.from_thread.run(self.emit_changed_event_async, xthing, value)
+        except Exception as e:
+            return e
+
+    async def emit_changed_event_async(self, xthing: XThing, value: Any):
+        try:
+            observers = xthing.__dict__[self.name]
+            for observer in observers:
+                await observer.send(
+                    {"messageType": "propertyStatus", "data": {self.name: value}}
+                )
+        except Exception:
+            print("error")
 
     @property
     def name(self):
         return self._name
 
     def add_to_app(self, app: FastAPI, xthing: XThing):
-        async def set_property(body):
+        def set_property(body):
             return self.__set__(xthing, body)
 
         set_property.__annotations__["body"] = Annotated[self.model, Body()]
         app.put(pathjoin(xthing.path, self.name), status_code=200)(set_property)
 
         @app.get(pathjoin(xthing.path, self.name), response_model=self.model)
-        async def get_property():
+        def get_property():
             return self.__get__(xthing)
 
     def property_affordance(self, xthing: XThing, path: Optional[str] = None): ...

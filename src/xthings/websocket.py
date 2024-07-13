@@ -48,9 +48,9 @@ async def receive_message_from_websocket(
 def dispatch_message(data, send_stream: ObjectSendStream, xthing: XThing):
     try:
         if data["messageType"] == "addPropertyObservation":
-            for k in data["data"].keys():
+            for key in data["data"].keys():
                 # TODO: xthing.observe_property(k, send_stream)
-                ...
+                xthing.__dict__[key] = send_stream
         elif data["messageType"] == "addActionObservation":
             for k in data["data"].keys():
                 # TODO: xthing.observe_property(k, send_stream)
