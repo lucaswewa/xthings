@@ -4,7 +4,6 @@ from xthings.server import XThingsServer
 from xthings.decorators import xthings_property, xthings_action
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
-from typing import Optional
 
 
 class User(BaseModel):

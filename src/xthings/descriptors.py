@@ -17,6 +17,9 @@ from typing import (
 )
 from typing_extensions import Self
 import uuid
+import pydantic
+
+from .action_manager import InvocationModel
 
 if TYPE_CHECKING:  # pragma: no cover
     from .xthing import XThing
@@ -124,8 +127,8 @@ class ActionDescriptor(XThingsDescriptor):
     def __init__(
         self,
         func: Callable,
-        input_model: BaseModel = None,
-        output_model: BaseModel = None,
+        input_model: Optional[type[BaseModel]] = None,
+        output_model: Optional[type[BaseModel]] = None,
     ):
         self._func = func
         self._input_model = input_model
@@ -133,6 +136,13 @@ class ActionDescriptor(XThingsDescriptor):
 
     def __set_name__(self, owner, name: str):
         self._name = name
+        self._invocation_model = pydantic.create_model(
+            f"{self.name}_invocation",
+            __base__=InvocationModel[Any, Any],
+            input=(Optional[self._input_model], None),
+            output=(Optional[self.output_model], None),
+        )
+        self._invocation_model.__name__ = f"{self.name}_invocation"
 
     @overload
     def __get__(self, xthing_obj: Literal[None], type=None) -> ActionDescriptor: ...
@@ -172,7 +182,11 @@ class ActionDescriptor(XThingsDescriptor):
             return action.response(request=request)
 
         start_action.__annotations__["body"] = Annotated[self.input_model, Body()]
-        app.post(pathjoin(xthing.path, self.name), status_code=201)(start_action)
+        app.post(
+            pathjoin(xthing.path, self.name),
+            response_model=self._invocation_model,
+            status_code=201,
+        )(start_action)
 
         async def list_invocations():
             return []
