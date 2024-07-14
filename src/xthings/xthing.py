@@ -15,8 +15,13 @@ from .descriptors import XThingsDescriptor
 if TYPE_CHECKING:  # pragma: no cover
     from .server import XThingsServer
 
+# TODO: V0.4.0 add xthings settings
+
+# TODO: V0.6.0 add mDNS support
+
 
 class XThing:
+    # TODO: V0.1.0 add xthing description
     _path: str
     _xthings_blocking_portal: Optional[BlockingPortal] = None
     _observers: dict[str, WeakSet[ObjectSendStream]] = {}

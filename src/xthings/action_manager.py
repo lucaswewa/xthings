@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel, ConfigDict
-from typing import Optional, Any, TypeVar, Generic
+from typing import Optional, Any
 from typing import TYPE_CHECKING
 from typing_extensions import Self
 import uuid
@@ -24,11 +24,9 @@ class InvocationStatus(str, Enum):
     ERROR = "error"
 
 
-InputT = TypeVar("InputT")
-OutputT = TypeVar("OutputT")
-
-
-class InvocationModel(BaseModel, Generic[InputT, OutputT]):
+class InvocationModel(BaseModel):
+    # TODO: V0.3.0 add logging
+    # TODO: V0.3.0 add links
     status: InvocationStatus
     id: uuid.UUID
     action: str
@@ -36,8 +34,8 @@ class InvocationModel(BaseModel, Generic[InputT, OutputT]):
     timeStarted: Optional[datetime]
     timeRequested: Optional[datetime]
     timeCompleted: Optional[datetime]
-    input: InputT
-    output: OutputT
+    input: Optional[Any]
+    output: Optional[Any]
 
 
 class EmptyObject(BaseModel):
@@ -51,6 +49,8 @@ class EmptyInput(RootModel):
 class Invocation:
     """The Invocation of an action function runs in a thread executor"""
 
+    # TODO: V0.6.0 add Cancellation
+    # TODO: V0.4.0 add logging
     def __init__(
         self,
         action: ActionDescriptor,
@@ -121,6 +121,7 @@ class Invocation:
 
 
 class ActionManager:
+    # TODO: V0.5.0 endpoint for invocation filteration by action, expire invocation, delete expired invocation
     def __init__(self):
         self._invocations = {}
         self._invocations_lock = asyncio.Lock()
@@ -147,7 +148,7 @@ class ActionManager:
             return [i.response() for i in self._invocations.values()]
 
     def attach_to_app(self, app: FastAPI) -> Self:
-        @app.get("/invocations", response_model=list[InvocationModel[Any, Any]])
+        @app.get("/invocations", response_model=list[InvocationModel])
         async def list_all_invocations(request: Request):
             return await self.list_invocation()
 

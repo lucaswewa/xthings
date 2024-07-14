@@ -51,6 +51,7 @@ class XThingsDescriptor(ABC):
 
 
 class PropertyDescriptor(XThingsDescriptor):
+    # TODO: V0.1.0 add interaction affordance
     _value: Any
     model: type[BaseModel]
     readonly: bool
@@ -74,7 +75,7 @@ class PropertyDescriptor(XThingsDescriptor):
         if obj is None:
             return self
 
-        # TODO: getter should be running in a thread executor
+        # TODO: V0.2.0 getter should be running in a thread executor
         if self._getter:
             return self._getter(obj)
 
@@ -82,7 +83,7 @@ class PropertyDescriptor(XThingsDescriptor):
 
     def __set__(self, obj, value):
         self._value = value
-        # TODO: setter should be running in a thread executor
+        # TODO: V0.2.0 setter should be running in a thread executor
         if self._setter:
             self._setter(obj, value)
 
@@ -126,6 +127,7 @@ class PropertyDescriptor(XThingsDescriptor):
 
 
 class ActionDescriptor(XThingsDescriptor):
+    # TODO: V0.1.0 add interaction affordance
     def __init__(
         self,
         func: Callable,
@@ -140,7 +142,7 @@ class ActionDescriptor(XThingsDescriptor):
         self._name = name
         self._invocation_model = pydantic.create_model(
             f"{self.name}_invocation",
-            __base__=InvocationModel[Any, Any],
+            __base__=InvocationModel,
             input=(Optional[self._input_model], None),
             output=(Optional[self.output_model], None),
         )
@@ -213,3 +215,8 @@ class ActionDescriptor(XThingsDescriptor):
             return []
 
         app.get(pathjoin(xthing.path, self.name))(list_invocations)
+
+
+# TODO: V0.8.0 EventDescriptor - events are created when conditions are met
+
+# TODO: V0.7.0 EndpointDescriptor - allows to easily add other endpoints
