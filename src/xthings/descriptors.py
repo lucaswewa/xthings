@@ -175,7 +175,8 @@ class ActionDescriptor(XThingsDescriptor):
         async def start_action(
             request: Request, body, background_tasks: BackgroundTasks
         ):
-            action = xthing._action_manager.invoke_action(
+            # invoke the action in a thread executor
+            action = await xthing._action_manager.invoke_action(
                 action=self, xthing=xthing, input=body, id=uuid.uuid4()
             )
 

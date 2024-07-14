@@ -7,8 +7,9 @@ from typing import Optional, Any, TypeVar, Generic
 from typing import TYPE_CHECKING
 from typing_extensions import Self
 import uuid
-from threading import Thread, RLock
+from threading import RLock
 from pydantic import RootModel
+import asyncio
 
 if TYPE_CHECKING:  # pragma: no cover
     from .descriptors import ActionDescriptor
@@ -47,7 +48,9 @@ class EmptyInput(RootModel):
     root: Optional[EmptyObject] = None
 
 
-class Invocation(Thread):
+class Invocation:
+    """The Invocation of an action function runs in a thread executor"""
+
     def __init__(
         self,
         action: ActionDescriptor,
@@ -55,8 +58,6 @@ class Invocation(Thread):
         input: Optional[BaseModel] = None,
         id: Optional[uuid.UUID] = None,
     ):
-        Thread.__init__(self, daemon=True)
-
         self._action = action
         self._xthing = xthing
         self._input = input if input is not None else EmptyInput()
@@ -117,15 +118,13 @@ class Invocation(Thread):
             with self._status_lock:
                 self._end_time = datetime.now()
 
-        return super().run()
-
 
 class ActionManager:
     def __init__(self):
         self._invocations = {}
-        self._invocations_lock = RLock()
+        self._invocations_lock = asyncio.Lock()
 
-    def invoke_action(
+    async def invoke_action(
         self,
         action: ActionDescriptor,
         xthing: XThing,
@@ -133,17 +132,19 @@ class ActionManager:
         id: uuid.UUID,
     ):
         thread = Invocation(action, xthing, input, id)
-        with self._invocations_lock:
+
+        asyncio.get_running_loop().run_in_executor(None, thread.run)
+        async with self._invocations_lock:
             self._invocations[str(thread.id)] = thread
-        thread.start()
         return thread
 
-    def list_invocation(self):
-        return [i.response() for i in self._invocations.values()]
+    async def list_invocation(self):
+        async with self._invocations_lock:
+            return [i.response() for i in self._invocations.values()]
 
     def attach_to_app(self, app: FastAPI) -> Self:
         @app.get("/invocations", response_model=list[InvocationModel[Any, Any]])
-        def list_all_invocations(request: Request):
-            return self.list_invocation()
+        async def list_all_invocations(request: Request):
+            return await self.list_invocation()
 
         return self
