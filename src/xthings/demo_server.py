@@ -96,7 +96,7 @@ html = """
 
 """
 {"messageType": "addPropertyObservation", "data": {"xyz": true}}
-{"messageType": "addPropertyObservation", "data": {"foo": true}}
+{"messageType": "addActionObservation", "data": {"func": true}}
 """
 
 

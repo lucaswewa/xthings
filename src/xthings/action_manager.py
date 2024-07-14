@@ -81,8 +81,7 @@ class Invocation:
 
     @property
     def output(self) -> Any:
-        with self._status_lock:
-            return self._return_value
+        return self._return_value
 
     def response(self, request: Optional[Request] = None):
         return self._action._invocation_model(
@@ -101,6 +100,7 @@ class Invocation:
         with self._status_lock:
             self._status = InvocationStatus.RUNNING
             self._start_time = datetime.now()
+            self._action.emit_changed_event(self._xthing, self._status)
 
         try:
             kwargs = self._input
@@ -109,11 +109,12 @@ class Invocation:
             with self._status_lock:
                 self._status = InvocationStatus.COMPLETED
                 self._return_value = result
+            self._action.emit_changed_event(self._xthing, self._status)
         except Exception as e:
             with self._status_lock:
                 self._status = InvocationStatus.ERROR
                 self._exception = e
-            print(str(e))
+            self._action.emit_changed_event(self._xthing, self._status)
         finally:
             with self._status_lock:
                 self._end_time = datetime.now()
@@ -132,6 +133,9 @@ class ActionManager:
         id: uuid.UUID,
     ):
         thread = Invocation(action, xthing, input, id)
+        asyncio.get_running_loop().run_in_executor(
+            None, action.emit_changed_event, xthing, InvocationStatus.PENDING
+        )
 
         asyncio.get_running_loop().run_in_executor(None, thread.run)
         async with self._invocations_lock:

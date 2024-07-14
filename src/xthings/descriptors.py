@@ -74,6 +74,7 @@ class PropertyDescriptor(XThingsDescriptor):
         if obj is None:
             return self
 
+        # TODO: getter should be running in a thread executor
         if self._getter:
             return self._getter(obj)
 
@@ -81,6 +82,7 @@ class PropertyDescriptor(XThingsDescriptor):
 
     def __set__(self, obj, value):
         self._value = value
+        # TODO: setter should be running in a thread executor
         if self._setter:
             self._setter(obj, value)
 
@@ -88,11 +90,11 @@ class PropertyDescriptor(XThingsDescriptor):
 
     def emit_changed_event(self, xthing: XThing, value: Any):
         try:
-            anyio.from_thread.run(self.emit_changed_event_async, xthing, value)
+            anyio.from_thread.run(self._emit_changed_event_async, xthing, value)
         except Exception as e:
             return e
 
-    async def emit_changed_event_async(self, xthing: XThing, value: Any):
+    async def _emit_changed_event_async(self, xthing: XThing, value: Any):
         try:
             for observer in xthing.observers(self.name):
                 await observer.send(
@@ -171,10 +173,28 @@ class ActionDescriptor(XThingsDescriptor):
     def output_model(self):
         return self._output_model
 
+    def emit_changed_event(self, xthing: XThing, value: Any):
+        try:
+            runner = xthing._xthings_blocking_portal
+            if runner is not None:
+                runner.start_task_soon(self._emit_changed_event_async, xthing, value)
+        except Exception as e:
+            print(str(e))
+
+    async def _emit_changed_event_async(self, xthing: XThing, value: Any):
+        try:
+            for observer in xthing.observers(self.name):
+                await observer.send(
+                    {"messageType": "actionStatus", "data": {self.name: value}}
+                )
+        except Exception as e:
+            print("error", str(e))
+
     def add_to_app(self, app: FastAPI, xthing: XThing):
         async def start_action(
             request: Request, body, background_tasks: BackgroundTasks
         ):
+            print("==============received an action request")
             # invoke the action in a thread executor
             action = await xthing._action_manager.invoke_action(
                 action=self, xthing=xthing, input=body, id=uuid.uuid4()
