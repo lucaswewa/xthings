@@ -21,7 +21,6 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class XThing:
-    # TODO: V0.1.0 add xthing description
     _path: str
     _xthings_blocking_portal: Optional[BlockingPortal] = None
     _observers: dict[str, WeakSet[ObjectSendStream]] = {}
@@ -69,14 +68,14 @@ class XThing:
         self._path = path
         self._action_manager = server.action_manager
 
-        for xdescriptor in XThingsDescriptor.get_xdescriptors(self):
+        for name, xdescriptor in XThingsDescriptor.get_xdescriptors(self):
             xdescriptor.add_to_app(server.app, self)
 
         @server.app.get(
             self.path, response_model_exclude_none=True, response_model_by_alias=True
         )
         def thing_description(request: Request):
-            return "thing_description"
+            return self.thing_description(base=str(request.base_url))
 
         @server.app.websocket(self.path + "/ws")
         async def websocket(ws: WebSocket):
@@ -96,3 +95,20 @@ class XThing:
         self, attr: str, observer_stream: ObjectSendStream
     ) -> None:
         self.observers(attr).remove(observer_stream)
+
+    def thing_description(self, path: Optional[str] = None, base: Optional[str] = None):
+        path = path or getattr(self, "path", "{base_uri}")
+        properties = {}
+        actions = {}
+
+        for name, item in XThingsDescriptor.get_xdescriptors(self):
+            if hasattr(item, "property_description"):
+                properties[name] = item.property_description(self, path)
+            if hasattr(item, "action_description"):
+                actions[name] = item.action_description(self, path)
+
+        return {
+            "title": getattr(self, "title", self.__class__.__name__),
+            "properties": properties,
+            "actions": actions,
+        }

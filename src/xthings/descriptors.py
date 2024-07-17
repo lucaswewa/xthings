@@ -44,17 +44,16 @@ class XThingsDescriptor(ABC):
                 continue
             attr = getattr(objcls, name)
             if isinstance(attr, XThingsDescriptor):
-                yield attr
+                yield name, attr
 
     @abstractmethod
     def add_to_app(self, app: FastAPI, xthing: XThing): ...
 
 
 class PropertyDescriptor(XThingsDescriptor):
-    # TODO: V0.1.0 add interaction affordance
     _value: Any
-    model: type[BaseModel]
-    readonly: bool
+    _model: type[BaseModel]
+    _readonly: bool
 
     def __init__(
         self,
@@ -63,10 +62,11 @@ class PropertyDescriptor(XThingsDescriptor):
         getter: Optional[Callable] = None,
         setter: Optional[Callable] = None,
     ):
-        self.model = model
+        self._model = model
         self._value = initial_value
         self._getter = getter or getattr(self, "_getter", None)
         self._setter = setter or getattr(self, "_setter", None)
+        self._readonly = False
 
     def __set_name__(self, owner, name: str):
         self._name = name
@@ -112,22 +112,26 @@ class PropertyDescriptor(XThingsDescriptor):
         def set_property(body):
             return self.__set__(xthing, body)
 
-        set_property.__annotations__["body"] = Annotated[self.model, Body()]
+        set_property.__annotations__["body"] = Annotated[self._model, Body()]
         app.put(pathjoin(xthing.path, self.name), status_code=200)(set_property)
 
-        @app.get(pathjoin(xthing.path, self.name), response_model=self.model)
+        @app.get(pathjoin(xthing.path, self.name), response_model=self._model)
         def get_property():
             return self.__get__(xthing)
-
-    def property_affordance(self, xthing: XThing, path: Optional[str] = None): ...
 
     def setter(self, func: Callable) -> Self:
         self._setter = func
         return self
 
+    def property_description(self, xthing: XThing, path: Optional[str] = None) -> Any:
+        path = path or xthing.path
+
+        # TODO: complete the description
+
+        return {}
+
 
 class ActionDescriptor(XThingsDescriptor):
-    # TODO: V0.1.0 add interaction affordance
     def __init__(
         self,
         func: Callable,
@@ -215,6 +219,13 @@ class ActionDescriptor(XThingsDescriptor):
             return []
 
         app.get(pathjoin(xthing.path, self.name))(list_invocations)
+
+    def action_description(self, xthing: XThing, path: Optional[str] = None):
+        path = path or xthing.path
+
+        # TODO: complete the description
+
+        return {}
 
 
 # TODO: V0.8.0 EventDescriptor - events are created when conditions are met

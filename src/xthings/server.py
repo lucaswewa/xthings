@@ -14,8 +14,6 @@ from .action_manager import ActionManager
 
 _xthings_servers: WeakSet[XThingsServer] = WeakSet()
 
-# TODO: V0.1.0 add logging
-
 # TODO: V0.5.0 add output to support object streams
 
 
