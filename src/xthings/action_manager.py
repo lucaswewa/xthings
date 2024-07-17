@@ -3,13 +3,16 @@ from fastapi import FastAPI, Request
 from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel, ConfigDict
-from typing import Optional, Any
+from typing import Optional, Any, Sequence, MutableSequence
 from typing import TYPE_CHECKING
 from typing_extensions import Self
 import uuid
 from threading import RLock
 from pydantic import RootModel
 import asyncio
+import logging
+from pydantic import model_validator
+from collections import deque
 
 if TYPE_CHECKING:  # pragma: no cover
     from .descriptors import ActionDescriptor
@@ -24,6 +27,37 @@ class InvocationStatus(str, Enum):
     ERROR = "error"
 
 
+class LogRecord(BaseModel):
+    """A model to serialise logging.LogRecord objects"""
+
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
+
+    message: str
+    levelname: str
+    levelno: int
+    lineno: int
+    filename: str
+    created: datetime
+
+    @model_validator(mode="before")
+    @classmethod
+    def generate_message(cls, data: Any):
+        if not hasattr(data, "message"):
+            if isinstance(data, logging.LogRecord):
+                try:
+                    data.message = data.getMessage()
+                except (ValueError, TypeError) as e:
+                    # too many args causes an error - but errors
+                    # in validation can be a problem for us:
+                    # it will cause 500 errors when retrieving
+                    # the invocation.
+                    # This way, you can find and fix the source.
+                    data.message = (
+                        f"Error constructing message ({e}) " f"from {data!r}."
+                    )
+        return data
+
+
 class InvocationModel(BaseModel):
     # TODO: V0.3.0 add logging
     # TODO: V0.3.0 add links
@@ -36,6 +70,7 @@ class InvocationModel(BaseModel):
     timeCompleted: Optional[datetime]
     input: Optional[Any]
     output: Optional[Any]
+    log: Sequence[LogRecord]
 
 
 class EmptyObject(BaseModel):
@@ -46,11 +81,26 @@ class EmptyInput(RootModel):
     root: Optional[EmptyObject] = None
 
 
+def invocation_logger(id) -> logging.Logger:
+    logger = logging.getLogger(f"xthings.action.{id}")
+    logger.setLevel(logging.INFO)
+    return logger
+
+
+class DequeLogHandler(logging.Handler):
+    def __init__(self, dest: MutableSequence, level=logging.INFO):
+        logging.Handler.__init__(self)
+        self.setLevel(level)
+        self.dest = dest
+
+    def emit(self, record):
+        self.dest.append(record)
+
+
 class Invocation:
     """The Invocation of an action function runs in a thread executor"""
 
     # TODO: V0.6.0 add Cancellation
-    # TODO: V0.4.0 add logging
     def __init__(
         self,
         action: ActionDescriptor,
@@ -70,6 +120,8 @@ class Invocation:
         self._end_time: Optional[datetime] = None
         self._exception: Optional[Exception] = None
         self._return_value: Optional[Any] = None
+
+        self._log: deque = deque(maxlen=1000)
 
     @property
     def id(self):
@@ -94,9 +146,14 @@ class Invocation:
             timeRequested=self._request_time,
             input=self.input,
             output=self.output,
+            log=self._log,
         )
 
     def run(self) -> None:
+        handler = DequeLogHandler(dest=self._log)
+        logger = invocation_logger(self.id)
+        logger.addHandler(handler)
+
         with self._status_lock:
             self._status = InvocationStatus.RUNNING
             self._start_time = datetime.now()
@@ -104,7 +161,7 @@ class Invocation:
 
         try:
             kwargs = self._input
-            result = self._action.__get__(xthing_obj=self._xthing)(kwargs)
+            result = self._action.__get__(xthing_obj=self._xthing)(kwargs, logger)
 
             with self._status_lock:
                 self._status = InvocationStatus.COMPLETED

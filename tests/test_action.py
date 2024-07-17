@@ -15,25 +15,29 @@ def test_action_initialization():
 
     class XT:
         ad = ActionDescriptor(
-            lambda xthing, x: x + 1, input_model=StrictInt, output_model=StrictInt
+            lambda xthing, x, logger: x + 1,
+            input_model=StrictInt,
+            output_model=StrictInt,
         )
 
     xt = XT()
-    assert xt.ad(1) == 2
+    assert xt.ad(1, None) == 2
 
 
 def test_action_add_to_app():
     class MyXThing(XThing):
         ad = ActionDescriptor(
-            lambda xthing, x: x + 1, input_model=StrictInt, output_model=StrictInt
+            lambda xthing, x, logger: x + 1,
+            input_model=StrictInt,
+            output_model=StrictInt,
         )
 
         @xthings_action(input_model=StrictInt, output_model=StrictInt)
-        def func(self, i: StrictInt) -> StrictInt:
+        def func(self, i: StrictInt, logger) -> StrictInt:
             return i + 1
 
         @xthings_action(input_model=StrictInt, output_model=StrictInt)
-        def func_error(self, i: StrictInt) -> StrictInt:
+        def func_error(self, i: StrictInt, logger) -> StrictInt:
             raise Exception("error")
             return i + 1
 

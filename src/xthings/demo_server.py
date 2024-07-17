@@ -42,13 +42,15 @@ class MyXThing(XThing):
         self._xyz = v
 
     @xthings_action(input_model=User, output_model=User)
-    def func(self, s: User):
+    def func(self, s: User, logger):
         import time
 
+        logger.info("func start")
         print(f"start to sleep {s} seconds")
         time.sleep(s.id)
         self.foo = s
         print("end")
+        logger.info("func end")
         return s
 
 
