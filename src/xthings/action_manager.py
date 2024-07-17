@@ -59,8 +59,6 @@ class LogRecord(BaseModel):
 
 
 class InvocationModel(BaseModel):
-    # TODO: V0.3.0 add logging
-    # TODO: V0.3.0 add links
     status: InvocationStatus
     id: uuid.UUID
     action: str
@@ -168,6 +166,7 @@ class Invocation:
                 self._return_value = result
             self._action.emit_changed_event(self._xthing, self._status)
         except Exception as e:
+            logger.error("invocation error")
             with self._status_lock:
                 self._status = InvocationStatus.ERROR
                 self._exception = e

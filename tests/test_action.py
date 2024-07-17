@@ -47,37 +47,28 @@ def test_action_add_to_app():
 
     with TestClient(server.app) as client:
         r = client.post("/xthing/ad", json=1)
-        print(1)
         assert r.status_code == 201
 
         r = client.get("/xthing/ad")
-        print(1)
         assert r.json() == []
 
         r = client.get("/invocations")
-        print(1)
         assert r.json()[0]["status"] == "completed"
 
         r = client.post("/xthing/func", json=1)
-        print(1)
         assert r.status_code == 201
 
         r = client.get("/xthing/func")
-        print(1)
         assert r.json() == []
 
         r = client.get("/invocations")
-        print(1)
         assert r.json()[1]["status"] == "completed"
 
         r = client.post("/xthing/func_error", json=1)
-        print(1)
         assert r.status_code == 201
 
         r = client.get("/xthing/func_error")
-        print(1)
         assert r.json() == []
 
         r = client.get("/invocations")
-        print(1)
         assert r.json()[2]["status"] == "error"

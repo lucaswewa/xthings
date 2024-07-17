@@ -34,7 +34,6 @@ class XThingsServer:
         self._xthings: dict[str, XThing] = {}
         global _xthings_servers
         _xthings_servers.add(self)
-        print(settings)
 
     @property
     def app(self):

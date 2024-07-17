@@ -57,7 +57,6 @@ class MyXThing(XThing):
 xthings_server = XThingsServer()
 with MyXThing() as myxthing:
     xthings_server.add_xthing(myxthing, "/xthing")
-    print(myxthing.foo)
     myxthing.foo = User(id=2, name="Smith")
 
     app = xthings_server.app

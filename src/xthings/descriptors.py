@@ -101,8 +101,9 @@ class PropertyDescriptor(XThingsDescriptor):
                 await observer.send(
                     {"messageType": "propertyStatus", "data": {self.name: value}}
                 )
-        except Exception as e:
-            print("error", str(e))
+        except Exception:
+            # TODO: handle exception
+            ...
 
     @property
     def name(self):
@@ -184,8 +185,9 @@ class ActionDescriptor(XThingsDescriptor):
             runner = xthing._xthings_blocking_portal
             if runner is not None:
                 runner.start_task_soon(self._emit_changed_event_async, xthing, value)
-        except Exception as e:
-            print(str(e))
+        except Exception:
+            # TODO: handle exception
+            ...
 
     async def _emit_changed_event_async(self, xthing: XThing, value: Any):
         try:
@@ -193,14 +195,14 @@ class ActionDescriptor(XThingsDescriptor):
                 await observer.send(
                     {"messageType": "actionStatus", "data": {self.name: value}}
                 )
-        except Exception as e:
-            print("error", str(e))
+        except Exception:
+            # TODO: handle exception
+            ...
 
     def add_to_app(self, app: FastAPI, xthing: XThing):
         async def start_action(
             request: Request, body, background_tasks: BackgroundTasks
         ):
-            print("==============received an action request")
             # invoke the action in a thread executor
             action = await xthing._action_manager.invoke_action(
                 action=self, xthing=xthing, input=body, id=uuid.uuid4()
