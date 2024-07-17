@@ -75,7 +75,7 @@ class PropertyDescriptor(XThingsDescriptor):
         if obj is None:
             return self
 
-        # TODO: V0.2.0 getter should be running in a thread executor
+        # The getter is running in an anyio worker thread
         if self._getter:
             return self._getter(obj)
 
@@ -83,7 +83,7 @@ class PropertyDescriptor(XThingsDescriptor):
 
     def __set__(self, obj, value):
         self._value = value
-        # TODO: V0.2.0 setter should be running in a thread executor
+        # The setter is running in an anyio worker thread
         if self._setter:
             self._setter(obj, value)
 
