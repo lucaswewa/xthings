@@ -24,6 +24,7 @@ class XThing:
     _path: str
     _xthings_blocking_portal: Optional[BlockingPortal] = None
     _observers: dict[str, WeakSet[ObjectSendStream]] = {}
+    _settings: dict = {}
     _ut_probe: Any
 
     async def __aenter__(self):
@@ -44,6 +45,14 @@ class XThing:
     @property
     def path(self):
         return self._path
+
+    @property
+    def settings(self):
+        return self._settings
+
+    @settings.setter  # type: ignore[no-redef]
+    def settings(self, val):
+        self._settings = val
 
     @property
     def action_manager(self):

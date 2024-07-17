@@ -8,6 +8,8 @@ from contextlib import asynccontextmanager, AsyncExitStack
 from fastapi import FastAPI
 from typing import Optional
 from weakref import WeakSet
+import os
+import yaml
 
 from .xthing import XThing
 from .action_manager import ActionManager
@@ -25,9 +27,10 @@ class XThingsServer:
     _blocking_portal: Optional[BlockingPortal]
     _xthings: dict[str, XThing]
 
-    def __init__(self, settings: Optional[str] = ""):
+    def __init__(self, settings_folder: Optional[str] = None):
         self._app = FastAPI(lifespan=self.lifespan)
 
+        self._settings_folder = settings_folder or "./settings"
         self._action_manager = ActionManager().attach_to_app(self._app)
         self._blocking_portal: Optional[BlockingPortal] = None
         self._lifecycle_status: str = None
@@ -82,5 +85,14 @@ class XThingsServer:
         if path in self._xthings:
             raise KeyError(f"{path} has already been added to this XThingsServer")
         self._xthings[path] = xthing
+
+        settings_folder = os.path.join(self._settings_folder)
+        os.makedirs(settings_folder, exist_ok=True)
+        filename = os.path.join(settings_folder, f"{path.strip('/')}.settings.yaml")
+        if os.path.exists(filename):
+            with open(filename, "r") as f:
+                xthing.settings = yaml.safe_load(f)
+        else:
+            xthing.settings = {}
 
         xthing.attach_to_app(self, path)

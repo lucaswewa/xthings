@@ -33,6 +33,10 @@ class MyXThing(XThing):
         self._xyz = user1
         return super().setup()
 
+    def teardown(self):
+        self._xyz = None
+        return super().teardown()
+
     @xthings_property(model=User)
     def xyz(self):
         return self._xyz
@@ -45,16 +49,17 @@ class MyXThing(XThing):
     def func(self, s: User, logger):
         import time
 
+        t = self.settings["a"]
         logger.info("func start")
-        print(f"start to sleep {s} seconds")
-        time.sleep(s.id)
+        logger.info(f"start to sleep {t} seconds")
+        time.sleep(t)
         self.foo = s
         print("end")
         logger.info("func end")
         return s
 
 
-xthings_server = XThingsServer()
+xthings_server = XThingsServer(settings_folder="./settings")
 with MyXThing() as myxthing:
     xthings_server.add_xthing(myxthing, "/xthing")
     myxthing.foo = User(id=2, name="Smith")
