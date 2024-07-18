@@ -15,7 +15,6 @@ from .descriptors import XThingsDescriptor
 if TYPE_CHECKING:  # pragma: no cover
     from .server import XThingsServer
 
-# TODO: V0.4.0 add xthings settings
 
 # TODO: V0.6.0 add mDNS support
 
@@ -24,6 +23,8 @@ class XThing:
     _path: str
     _xthings_blocking_portal: Optional[BlockingPortal] = None
     _observers: dict[str, WeakSet[ObjectSendStream]] = {}
+    _property_observers: dict[str, WeakSet[ObjectSendStream]] = {}
+    _action_observers: dict[str, WeakSet[ObjectSendStream]] = {}
     _settings: dict = {}
     _ut_probe: Any
 
@@ -90,20 +91,35 @@ class XThing:
         async def websocket(ws: WebSocket):
             await websocket_endpoint(self, ws)
 
-    def observers(self, attr: str) -> WeakSet[ObjectSendStream[Any]]:
-        if attr not in self._observers.keys():
-            self._observers[attr] = WeakSet()
-        return self._observers[attr]
+    def property_observers(self, attr: str) -> WeakSet[ObjectSendStream[Any]]:
+        if attr not in self._property_observers.keys():
+            self._property_observers[attr] = WeakSet()
+        return self._property_observers[attr]
 
-    def add_observer_by_attr(
+    def action_observers(self, attr: str) -> WeakSet[ObjectSendStream[Any]]:
+        if attr not in self._action_observers.keys():
+            self._action_observers[attr] = WeakSet()
+        return self._action_observers[attr]
+
+    def add_property_observer_by_attr(
         self, attr: str, observer_stream: ObjectSendStream
     ) -> None:
-        self.observers(attr).add(observer_stream)
+        self.property_observers(attr).add(observer_stream)
 
-    def remove_observer_by_attr(
+    def add_action_observer_by_attr(
         self, attr: str, observer_stream: ObjectSendStream
     ) -> None:
-        self.observers(attr).remove(observer_stream)
+        self.action_observers(attr).add(observer_stream)
+
+    def remove_property_observer_by_attr(
+        self, attr: str, observer_stream: ObjectSendStream
+    ) -> None:
+        self.property_observers(attr).remove(observer_stream)
+
+    def remove_action_observer_by_attr(
+        self, attr: str, observer_stream: ObjectSendStream
+    ) -> None:
+        self.action_observers(attr).remove(observer_stream)
 
     def thing_description(self, path: Optional[str] = None, base: Optional[str] = None):
         path = path or getattr(self, "path", "{base_uri}")

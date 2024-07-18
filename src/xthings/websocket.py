@@ -47,13 +47,12 @@ async def receive_message_from_websocket(
 
 def dispatch_message(data, send_stream: ObjectSendStream, xthing: XThing):
     try:
-        # TODO: V0.4.0 will distinguish property observer and action observer
         if data["messageType"] == "addPropertyObservation":
             for key in data["data"].keys():
-                xthing.add_observer_by_attr(key, send_stream)
+                xthing.add_property_observer_by_attr(key, send_stream)
         elif data["messageType"] == "addActionObservation":
             for key in data["data"].keys():
-                xthing.add_observer_by_attr(key, send_stream)
+                xthing.add_action_observer_by_attr(key, send_stream)
         else:
             raise ValueError(
                 "messageType must be 'addPropertyObservation' or 'addActionObservation'"

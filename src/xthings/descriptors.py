@@ -97,7 +97,7 @@ class PropertyDescriptor(XThingsDescriptor):
 
     async def _emit_changed_event_async(self, xthing: XThing, value: Any):
         try:
-            for observer in xthing.observers(self.name):
+            for observer in xthing.property_observers(self.name):
                 await observer.send(
                     {"messageType": "propertyStatus", "data": {self.name: value}}
                 )
@@ -191,7 +191,7 @@ class ActionDescriptor(XThingsDescriptor):
 
     async def _emit_changed_event_async(self, xthing: XThing, value: Any):
         try:
-            for observer in xthing.observers(self.name):
+            for observer in xthing.action_observers(self.name):
                 await observer.send(
                     {"messageType": "actionStatus", "data": {self.name: value}}
                 )

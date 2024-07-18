@@ -71,4 +71,7 @@ def test_action_add_to_app():
         assert r.json() == []
 
         r = client.get("/invocations")
+        r = client.get(
+            "/invocations"
+        )  # Fixme: get twice to wait for next task in the event loop
         assert r.json()[2]["status"] == "error"
