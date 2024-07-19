@@ -1,9 +1,15 @@
 from xthings.xthing import XThing
-from xthings.descriptors import PropertyDescriptor, ActionDescriptor
+from xthings.descriptors import (
+    PropertyDescriptor,
+    ActionDescriptor,
+    PngImageStreamDescriptor,
+)
 from xthings.server import XThingsServer
 from xthings.decorators import xthings_property, xthings_action
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
+import numpy as np
+import time
 
 
 class User(BaseModel):
@@ -27,9 +33,12 @@ user2 = User(id=2, name="John")
 class MyXThing(XThing):
     foo = PropertyDescriptor(User, User(id=1, name="John"))
     bar = ActionDescriptor(func, input_model=User, output_model=User)
+    png_stream_cv = PngImageStreamDescriptor(ringbuffer_size=100)
     _xyz: User
 
     def setup(self):
+        self._streaming = False
+        self._delay = 0.1
         self._xyz = user1
         return super().setup()
 
@@ -57,6 +66,26 @@ class MyXThing(XThing):
         print("end")
         logger.info("func end")
         return s
+
+    @xthings_action(input_model=User, output_model=User)
+    def start_png_stream_cv(self, s: User, logger):
+        print(self.png_stream_cv, self._streaming, self._delay)
+        if not self._streaming:
+            self._streaming = True
+            while self._streaming:
+                frame = np.random.rand(480, 640, 3) * 255
+                frame = frame.astype(np.uint8)
+
+                if self.png_stream_cv.add_frame(
+                    frame=frame, portal=self._xthings_blocking_portal
+                ):
+                    self.last_frame_index = self.png_stream_cv.last_frame_i
+                    # time.sleep(self._delay)
+
+    @xthings_action(input_model=User, output_model=User)
+    def stop_png_stream_cv(self, s: User, logger):
+        print(self.png_stream_cv)
+        self._streaming = False
 
 
 xthings_server = XThingsServer(settings_folder="./settings")
