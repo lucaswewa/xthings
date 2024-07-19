@@ -14,8 +14,10 @@ import asyncio
 import logging
 from pydantic import model_validator
 from collections import deque
+import threading
 
 from .utils import pathjoin
+from .errors import InvocationCancelledError
 
 if TYPE_CHECKING:  # pragma: no cover
     from .descriptors import ActionDescriptor
@@ -98,6 +100,16 @@ class DequeLogHandler(logging.Handler):
         self.dest.append(record)
 
 
+class CancellationToken:
+    def __init__(self, id: uuid.UUID):
+        self._event: threading.Event = threading.Event()
+        self._invocation_id = id
+
+    def check(self, timeout: float):
+        if self._event.wait(timeout):
+            raise InvocationCancelledError("The actioin was cancelled.")
+
+
 class Invocation:
     """The Invocation of an action function runs in a thread executor"""
 
@@ -108,11 +120,13 @@ class Invocation:
         xthing: XThing,
         input: Optional[BaseModel] = None,
         id: Optional[uuid.UUID] = None,
+        cancellation_token: Optional[CancellationToken] = None,
     ):
         self._action = action
         self._xthing = xthing
         self._input = input if input is not None else EmptyInput()
         self._id = id
+        self._cancellation_token = cancellation_token
 
         self._status_lock = RLock()
         self._status = InvocationStatus.PENDING
@@ -144,6 +158,10 @@ class Invocation:
     def output(self) -> Any:
         return self._return_value
 
+    def cancel(self):
+        if self._cancellation_token is not None:
+            self._cancellation_token._event.set()
+
     def response(self, request: Optional[Request] = None):
         return self._action._invocation_model(
             status=self._status,
@@ -163,6 +181,8 @@ class Invocation:
         logger = invocation_logger(self.id)
         logger.addHandler(handler)
 
+        cancellation_token = self._cancellation_token
+
         with self._status_lock:
             self._status = InvocationStatus.RUNNING
             self._start_time = datetime.now()
@@ -170,11 +190,18 @@ class Invocation:
 
         try:
             kwargs = self._input
-            result = self._action.__get__(xthing_obj=self._xthing)(kwargs, logger)
+            result = self._action.__get__(xthing_obj=self._xthing)(
+                kwargs, cancellation_token, logger
+            )
 
             with self._status_lock:
                 self._status = InvocationStatus.COMPLETED
                 self._return_value = result
+            self._action.emit_changed_event(self._xthing, self._status)
+        except InvocationCancelledError as e:
+            with self._status_lock:
+                self._status = InvocationStatus.CANCELLED
+                self._exception = e
             self._action.emit_changed_event(self._xthing, self._status)
         except Exception as e:
             logger.error("invocation error")
@@ -188,7 +215,6 @@ class Invocation:
 
 
 class ActionManager:
-    # TODO: V0.5.0 endpoint for invocation filteration by action, expire invocation, delete expired invocation
     def __init__(self):
         self._invocations = {}
         self._invocations_lock = asyncio.Lock()
@@ -199,16 +225,17 @@ class ActionManager:
         xthing: XThing,
         input: Optional[BaseModel],
         id: uuid.UUID,
+        cancellation_token: Optional[CancellationToken],
     ):
-        thread = Invocation(action, xthing, input, id)
-        asyncio.get_running_loop().run_in_executor(
+        invocation = Invocation(action, xthing, input, id, cancellation_token)
+        await asyncio.get_running_loop().run_in_executor(
             None, action.emit_changed_event, xthing, InvocationStatus.PENDING
         )
 
-        asyncio.get_running_loop().run_in_executor(None, thread.run)
+        asyncio.get_running_loop().run_in_executor(None, invocation.run)
         async with self._invocations_lock:
-            self._invocations[str(thread.id).lower()] = thread
-        return thread
+            self._invocations[str(invocation.id).lower()] = invocation
+        return invocation
 
     async def list_invocation(
         self, action: Optional[ActionDescriptor] = None, xthing: Optional[XThing] = None
@@ -235,5 +262,11 @@ class ActionManager:
                 raise HTTPException(
                     status_code=404, detail="No action invocation found with ID {id}"
                 )
+
+        @app.delete("/invocations/{id}")
+        async def delete_invocation(id: uuid.UUID):
+            async with self._invocations_lock:
+                invocation = self._invocations[str(id).lower()]
+                invocation.cancel()
 
         return self

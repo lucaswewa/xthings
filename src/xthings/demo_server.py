@@ -6,10 +6,12 @@ from xthings.descriptors import (
 )
 from xthings.server import XThingsServer
 from xthings.decorators import xthings_property, xthings_action
+from xthings.action_manager import CancellationToken
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
 import numpy as np
 import time
+import logging
 
 
 class User(BaseModel):
@@ -55,11 +57,17 @@ class MyXThing(XThing):
         self._xyz = v
 
     @xthings_action(input_model=User, output_model=User)
-    def func(self, s: User, logger):
+    def func(
+        self, s: User, cancellation_token: CancellationToken, logger: logging.Logger
+    ):
         t = self.settings["a"]
         logger.info("func start")
         logger.info(f"start to sleep {t} seconds")
-        time.sleep(t)
+        n = 0
+        while n < 100:
+            time.sleep(t)
+            cancellation_token.check(0)
+            n += 1
         self.foo = s
         print("end")
         logger.info("func end")

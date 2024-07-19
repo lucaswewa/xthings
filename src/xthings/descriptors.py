@@ -21,7 +21,7 @@ import uuid
 import pydantic
 import cv2 as cv
 
-from .action_manager import InvocationModel
+from .action_manager import InvocationModel, CancellationToken
 from .streaming import ImageStreamResponse, ImageStream
 from .utils import pathjoin
 
@@ -198,8 +198,13 @@ class ActionDescriptor(XThingsDescriptor):
             request: Request, body, background_tasks: BackgroundTasks
         ):
             # invoke the action in a thread executor
+            id = uuid.uuid4()
             action = await xthing._action_manager.invoke_action(
-                action=self, xthing=xthing, input=body, id=uuid.uuid4()
+                action=self,
+                xthing=xthing,
+                input=body,
+                id=id,
+                cancellation_token=CancellationToken(id),
             )
 
             return action.response(request=request)

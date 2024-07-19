@@ -1,0 +1,2 @@
+class InvocationCancelledError(Exception):
+    pass
