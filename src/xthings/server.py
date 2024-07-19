@@ -16,8 +16,6 @@ from .action_manager import ActionManager
 
 _xthings_servers: WeakSet[XThingsServer] = WeakSet()
 
-# TODO: V0.5.0 add output to support object streams
-
 
 class XThingsServer:
     """An XThingsServer is a FastAPI app, which can hosts one or more XThing(s)"""
