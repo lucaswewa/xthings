@@ -122,7 +122,7 @@ class ImageStream:
     async def image_stream_response(self) -> ImageStreamResponse:
         return ImageStreamResponse(self.frame_async_generator(), self.get_content_type)
 
-    def add_frame(self, frame: np.ndarray, portal: BlockingPortal) -> bool:
+    def add_frame(self, frame: np.ndarray, portal: Optional[BlockingPortal]) -> bool:
         """Add a frame to the ring buffer"""
         with self._lock:
             # Return the next buffer in the ringbuffer to write to
@@ -134,7 +134,8 @@ class ImageStream:
             if success:
                 entry.frame = array.tobytes()
                 entry.index = self.last_frame_i + 1
-                portal.start_task_soon(self.notify_new_frame, entry.index)
+                if portal is not None:
+                    portal.start_task_soon(self.notify_new_frame, entry.index)
 
             return success
 

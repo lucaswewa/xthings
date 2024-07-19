@@ -56,8 +56,6 @@ class MyXThing(XThing):
 
     @xthings_action(input_model=User, output_model=User)
     def func(self, s: User, logger):
-        import time
-
         t = self.settings["a"]
         logger.info("func start")
         logger.info(f"start to sleep {t} seconds")
