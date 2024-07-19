@@ -50,7 +50,7 @@ def test_action_add_to_app():
         assert r.status_code == 201
 
         r = client.get("/xthing/ad")
-        assert r.json() == []
+        assert len(r.json()) == 1
 
         r = client.get("/invocations")
         assert r.json()[0]["status"] == "completed"
@@ -59,7 +59,7 @@ def test_action_add_to_app():
         assert r.status_code == 201
 
         r = client.get("/xthing/func")
-        assert r.json() == []
+        assert len(r.json()) == 1
 
         r = client.get("/invocations")
         assert r.json()[1]["status"] == "completed"
@@ -68,7 +68,7 @@ def test_action_add_to_app():
         assert r.status_code == 201
 
         r = client.get("/xthing/func_error")
-        assert r.json() == []
+        assert len(r.json()) == 1
 
         r = client.get("/invocations")
         r = client.get(

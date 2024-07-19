@@ -1,5 +1,6 @@
 from __future__ import annotations
 from fastapi import FastAPI, Request
+from fastapi.exceptions import HTTPException
 from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel, ConfigDict
@@ -13,6 +14,8 @@ import asyncio
 import logging
 from pydantic import model_validator
 from collections import deque
+
+from .utils import pathjoin
 
 if TYPE_CHECKING:  # pragma: no cover
     from .descriptors import ActionDescriptor
@@ -126,6 +129,14 @@ class Invocation:
         return self._id
 
     @property
+    def action(self):
+        return self._action
+
+    @property
+    def xthing(self):
+        return self._xthing
+
+    @property
     def input(self) -> Any:
         return self._input
 
@@ -137,8 +148,8 @@ class Invocation:
         return self._action._invocation_model(
             status=self._status,
             id=self.id,
-            action=self._xthing.path + self._action.name,
-            href=f"/actions/{self.id}",
+            action=pathjoin(self._xthing.path, self._action.name),
+            href=f"/invocations/{self.id}",
             timeStarted=self._start_time,
             timeCompleted=self._end_time,
             timeRequested=self._request_time,
@@ -196,16 +207,33 @@ class ActionManager:
 
         asyncio.get_running_loop().run_in_executor(None, thread.run)
         async with self._invocations_lock:
-            self._invocations[str(thread.id)] = thread
+            self._invocations[str(thread.id).lower()] = thread
         return thread
 
-    async def list_invocation(self):
+    async def list_invocation(
+        self, action: Optional[ActionDescriptor] = None, xthing: Optional[XThing] = None
+    ):
         async with self._invocations_lock:
-            return [i.response() for i in self._invocations.values()]
+            return [
+                i.response()
+                for i in self._invocations.values()
+                if xthing is None or i.xthing == xthing
+                if action is None or i.action == action
+            ]
 
     def attach_to_app(self, app: FastAPI) -> Self:
         @app.get("/invocations", response_model=list[InvocationModel])
         async def list_all_invocations(request: Request):
-            return await self.list_invocation()
+            return await self.list_invocation(action=None, xthing=None)
+
+        @app.get("/invocations/{id}", response_model=InvocationModel)
+        async def action_invocation(id: uuid.UUID, request: Request):
+            try:
+                async with self._invocations_lock:
+                    return self._invocations[str(id).lower()].response(request=request)
+            except KeyError:
+                raise HTTPException(
+                    status_code=404, detail="No action invocation found with ID {id}"
+                )
 
         return self

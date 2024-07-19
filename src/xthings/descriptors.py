@@ -23,19 +23,10 @@ import cv2 as cv
 
 from .action_manager import InvocationModel
 from .streaming import ImageStreamResponse, ImageStream
+from .utils import pathjoin
 
 if TYPE_CHECKING:  # pragma: no cover
     from .xthing import XThing
-
-
-def pathjoin(pa, pb):
-    while pa.endswith("/"):
-        pa = pa[:-1]
-
-    while pb.startswith("/"):
-        pb = pb[1:]
-
-    return pa + "/" + pb
 
 
 class XThingsDescriptor(ABC):
@@ -221,7 +212,7 @@ class ActionDescriptor(XThingsDescriptor):
         )(start_action)
 
         async def list_invocations():
-            return []
+            return await xthing.action_manager.list_invocation(self, xthing)
 
         app.get(pathjoin(xthing.path, self.name))(list_invocations)
 
