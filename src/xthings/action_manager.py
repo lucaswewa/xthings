@@ -113,7 +113,6 @@ class CancellationToken:
 class Invocation:
     """The Invocation of an action function runs in a thread executor"""
 
-    # TODO: V0.6.0 add Cancellation
     def __init__(
         self,
         action: ActionDescriptor,

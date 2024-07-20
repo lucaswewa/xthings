@@ -12,6 +12,7 @@ from fastapi.responses import HTMLResponse
 import numpy as np
 import time
 import logging
+# import threading
 
 
 class User(BaseModel):
@@ -38,15 +39,21 @@ class MyXThing(XThing):
     png_stream_cv = PngImageStreamDescriptor(ringbuffer_size=100)
     _xyz: User
 
+    def __init__(self, service_type, service_name):
+        XThing.__init__(self, service_type, service_name)
+
     def setup(self):
+        super().setup()
         self._streaming = False
         self._delay = 0.1
         self._xyz = user1
-        return super().setup()
+
+        return self
 
     def teardown(self):
         self._xyz = None
-        return super().teardown()
+        super().teardown()
+        return self
 
     @xthings_property(model=User)
     def xyz(self):
@@ -95,11 +102,11 @@ class MyXThing(XThing):
 
 
 xthings_server = XThingsServer(settings_folder="./settings")
-with MyXThing() as myxthing:
-    xthings_server.add_xthing(myxthing, "/xthing")
-    myxthing.foo = User(id=2, name="Smith")
+myxthing = MyXThing("_xthings._http._tcp.local.", "myxthing._xthings._http._tcp.local.")
+xthings_server.add_xthing(myxthing, "/xthing")
+myxthing.foo = User(id=2, name="Smith")
 
-    app = xthings_server.app
+app = xthings_server.app
 
 html = """
 <!DOCTYPE html>

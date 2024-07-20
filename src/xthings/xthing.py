@@ -9,14 +9,14 @@ from anyio.abc import ObjectSendStream
 from fastapi import Request
 from typing import Any, TYPE_CHECKING, Optional
 from weakref import WeakSet
+from zeroconf import IPVersion, ServiceInfo, Zeroconf, get_all_addresses
+import socket
+
 from .websocket import websocket_endpoint, WebSocket
 from .descriptors import XThingsDescriptor
 
 if TYPE_CHECKING:  # pragma: no cover
     from .server import XThingsServer
-
-
-# TODO: V0.6.0 add mDNS support
 
 
 class XThing:
@@ -27,6 +27,10 @@ class XThing:
     _action_observers: dict[str, WeakSet[ObjectSendStream]] = {}
     _settings: dict = {}
     _ut_probe: Any
+
+    def __init__(self, service_type, service_name):
+        self._service_type = service_type
+        self._service_name = service_name
 
     async def __aenter__(self):
         """Context management is used to setup the XThing"""
@@ -72,6 +76,28 @@ class XThing:
         Subclass should override this method.
         """
         self._ut_probe = "shutdown"
+
+    def register_zeroconf(self, service_type, service_name):
+        self.zeroconf_server = None
+        self.service_info = None
+        self.service_infos = []
+
+        desc = {"path": f"/something/"}
+        mdns_addresses = [
+            socket.inet_aton(i)
+            for i in get_all_addresses()
+            if i not in ("127.0.0.1", "0.0.0.0")
+        ]
+        info = ServiceInfo(
+            service_type,
+            service_name,
+            addresses=mdns_addresses,
+            port=8000,
+            properties=desc,
+        )
+        ip_version = IPVersion.V4Only
+        zeroconf = Zeroconf(ip_version=ip_version)
+        zeroconf.register_service(info)
 
     def attach_to_app(self, server: XThingsServer, path: str):
         """Add HTTP handlers to the app for this XThing"""

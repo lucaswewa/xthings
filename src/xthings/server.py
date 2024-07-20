@@ -13,6 +13,7 @@ import yaml
 
 from .xthing import XThing
 from .action_manager import ActionManager
+from .xthing_zeroconf import run_mdns_task
 
 _xthings_servers: WeakSet[XThingsServer] = WeakSet()
 
@@ -66,9 +67,11 @@ class XThingsServer:
                 xthing._xthings_blocking_portal = portal
 
             async with AsyncExitStack() as stack:
+                xthing_services = []
                 for xthing in self._xthings.values():
                     await stack.enter_async_context(xthing)
-
+                    xthing_services.append((xthing._service_type, xthing._service_name))
+                run_mdns_task(xthing_services)
                 yield
 
             # detach the blocking portal from each of the XThing
