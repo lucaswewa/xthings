@@ -1,13 +1,8 @@
-#!/usr/bin/env python3
-"""Example of announcing 250 services (in this case, a fake HTTP server)."""
-
-import argparse
 import asyncio
-import logging
 import socket
 from typing import List, Optional
 
-from zeroconf import IPVersion
+from zeroconf import IPVersion, get_all_addresses
 from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
 
 
@@ -32,8 +27,14 @@ class AsyncRunner:
         await self.aiozc.async_close()
 
 
-def run_mdns_task(xthing_services):  # service_type, service_name):
+def run_mdns_task(xthing_services: list[tuple[str, str]], port):
     ip_version = IPVersion.V4Only
+
+    mdns_addresses = [
+        socket.inet_aton(i)
+        for i in get_all_addresses()
+        if i not in ("127.0.0.1", "0.0.0.0") and not i.startswith("169.254")
+    ]
 
     infos = []
     for service_type, service_name in xthing_services:
@@ -41,10 +42,8 @@ def run_mdns_task(xthing_services):  # service_type, service_name):
             AsyncServiceInfo(
                 service_type,
                 service_name,
-                addresses=[socket.inet_aton("127.0.0.1")],
-                port=80,
-                properties={"path": "/myxthing/"},
-                server="zcdemohost.local.",
+                addresses=mdns_addresses,
+                port=port,
             )
         )
     loop = asyncio.get_event_loop()

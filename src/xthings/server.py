@@ -17,6 +17,8 @@ from .xthing_zeroconf import run_mdns_task
 
 _xthings_servers: WeakSet[XThingsServer] = WeakSet()
 
+port = 8000
+
 
 class XThingsServer:
     """An XThingsServer is a FastAPI app, which can hosts one or more XThing(s)"""
@@ -71,7 +73,7 @@ class XThingsServer:
                 for xthing in self._xthings.values():
                     await stack.enter_async_context(xthing)
                     xthing_services.append((xthing._service_type, xthing._service_name))
-                run_mdns_task(xthing_services)
+                run_mdns_task(xthing_services, port)
                 yield
 
             # detach the blocking portal from each of the XThing

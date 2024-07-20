@@ -12,7 +12,6 @@ from fastapi.responses import HTMLResponse
 import numpy as np
 import time
 import logging
-# import threading
 
 
 class User(BaseModel):
