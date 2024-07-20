@@ -6,13 +6,18 @@ from xthings.descriptors import PropertyDescriptor
 from xthings.decorators import xthings_property
 from pydantic import BaseModel
 
+service_type = "_http._tcp.local."
+service_name = "thing._http._tcp.local."
+
 
 class User(BaseModel):
     id: int
     name: str
 
+
 user1 = User(id=1, name="John")
 user2 = User(id=2, name="Joe")
+
 
 class MyXThing(XThing):
     p = PropertyDescriptor(User, user1)
@@ -54,7 +59,7 @@ def test_property_initialization():
 
 def test_property_add_to_app():
     server = XThingsServer()
-    xthing = MyXThing()
+    xthing = MyXThing(service_type, service_name)
     server.add_xthing(xthing, "/xthing")
 
     with TestClient(server.app) as client:
@@ -67,11 +72,9 @@ def test_property_add_to_app():
 
 
 def test_property_decorator():
-
-
     server = XThingsServer()
 
-    with MyXThing() as t:
+    with MyXThing(service_type, service_name) as t:
         server.add_xthing(t, "/xthing")
         with TestClient(server.app) as client:
             r = client.get("/xthing/xyz")
@@ -89,9 +92,10 @@ def test_property_decorator():
             r = client.get("/xthing/foo")
             assert User.model_validate(r.json()) == user2
 
+
 def test_property_observer():
     server = XThingsServer()
-    xthing = MyXThing()
+    xthing = MyXThing(service_type, service_name)
     server.add_xthing(xthing, "/xthing")
 
     with TestClient(server.app) as client:
@@ -123,4 +127,3 @@ def test_property_observer():
                     message = ws2.receive_json(mode="text")
                     assert message["messageType"] == "propertyStatus"
                     assert User.model_validate(message["data"]["xyz"]) == user2
-

@@ -7,11 +7,14 @@ from typing import Optional
 xthing: Optional[XThing]
 server: Optional[XThingsServer]
 
+service_type = "_http._tcp.local."
+service_name = "thing._http._tcp.local."
+
 
 @pytest.fixture(autouse=True)
 def setup_teardown():
     global xthing, server
-    xthing = XThing()
+    xthing = XThing(service_type, service_name)
     server = XThingsServer()
     server.add_xthing(xthing, "/xthing")
     yield

@@ -81,7 +81,7 @@ class MyXThing(XThing):
         return s
 
     @xthings_action(input_model=User, output_model=User)
-    def start_png_stream_cv(self, s: User, logger):
+    def start_png_stream_cv(self, s: User, cancellatioin_token, logger):
         print(self.png_stream_cv, self._streaming, self._delay)
         if not self._streaming:
             self._streaming = True
@@ -96,7 +96,7 @@ class MyXThing(XThing):
                     # time.sleep(self._delay)
 
     @xthings_action(input_model=User, output_model=User)
-    def stop_png_stream_cv(self, s: User, logger):
+    def stop_png_stream_cv(self, s: User, cancellation_token, logger):
         print(self.png_stream_cv)
         self._streaming = False
 

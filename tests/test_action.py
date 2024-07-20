@@ -7,42 +7,48 @@ from pydantic import StrictInt
 from xthings.decorators import xthings_action
 
 
+service_type = "_http._tcp.local."
+service_name = "thing._http._tcp.local."
+
+
 def test_action_initialization():
     ad = ActionDescriptor(
-        lambda x: x + 1, input_model=StrictInt, output_model=StrictInt
+        lambda xthing, x, ct, logger: x + 1,
+        input_model=StrictInt,
+        output_model=StrictInt,
     )
     assert isinstance(ad, ActionDescriptor)
 
     class XT:
         ad = ActionDescriptor(
-            lambda xthing, x, logger: x + 1,
+            lambda xthing, x, cancellation_token, logger: x + 1,
             input_model=StrictInt,
             output_model=StrictInt,
         )
 
     xt = XT()
-    assert xt.ad(1, None) == 2
+    assert xt.ad(1, None, None) == 2
 
 
 def test_action_add_to_app():
     class MyXThing(XThing):
         ad = ActionDescriptor(
-            lambda xthing, x, logger: x + 1,
+            lambda xthing, x, cancellation_token, logger: x + 1,
             input_model=StrictInt,
             output_model=StrictInt,
         )
 
         @xthings_action(input_model=StrictInt, output_model=StrictInt)
-        def func(self, i: StrictInt, logger) -> StrictInt:
+        def func(self, i: StrictInt, cancellation_token, logger) -> StrictInt:
             return i + 1
 
         @xthings_action(input_model=StrictInt, output_model=StrictInt)
-        def func_error(self, i: StrictInt, logger) -> StrictInt:
+        def func_error(self, i: StrictInt, cancellation_token, logger) -> StrictInt:
             raise Exception("error")
             return i + 1
 
     server = XThingsServer()
-    xthing = MyXThing()
+    xthing = MyXThing(service_type, service_name)
     server.add_xthing(xthing, "/xthing")
 
     with TestClient(server.app) as client:

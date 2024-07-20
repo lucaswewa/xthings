@@ -4,6 +4,9 @@ import pytest
 from xthings.server import XThingsServer
 from xthings.xthing import XThing
 
+service_type = "_http._tcp.local."
+service_name = "thing._http._tcp.local."
+
 
 def test_xthings_server_lifecycle():
     server = XThingsServer()
@@ -17,7 +20,7 @@ def test_xthings_server_lifecycle():
 
 def test_xthings_server_add_xthing():
     server = XThingsServer()
-    xthing = XThing()
+    xthing = XThing(service_type, service_name)
     server.add_xthing(xthing, "/xthing")
     assert xthing.path == "/xthing"
     assert xthing._xthings_blocking_portal is None
@@ -36,6 +39,6 @@ def test_xthings_server_add_xthing():
 def test_xthings_server_add_xthing_twice():
     with pytest.raises(KeyError):
         server = XThingsServer()
-        xthing = XThing()
+        xthing = XThing(service_type, service_name)
         server.add_xthing(xthing, "/xthing")
         server.add_xthing(xthing, "/xthing")
