@@ -64,5 +64,6 @@ plugins = ["pydantic.mypy", "numpy.typing.mypy_plugin"]
 
 [tool.coverage.run]
 omit = [
-  "demo_server.py"
-    ]
+  "demo_server.py",
+  "demo_zcclient.py"
+  ]

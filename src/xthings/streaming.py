@@ -88,7 +88,6 @@ class ImageStream:
         if i < self.last_frame_i - len(self._ringbuffer) + 2:
             raise ValueError("the ith frame has been overwritten")
         if i > self.last_frame_i:
-            # TODO: await the ith frame
             raise ValueError("the ith frame has not yet been acquired")
         entry = self._ringbuffer[i % len(self._ringbuffer)]
         if entry.index != i:

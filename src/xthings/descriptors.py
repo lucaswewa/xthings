@@ -279,8 +279,3 @@ class PngImageStreamDescriptor(ImageStreamDescriptor):
             lambda: b"image/png",
             **kwargs,
         )
-
-
-# TODO: V0.8.0 EventDescriptor - events are created when conditions are met
-
-# TODO: V0.7.0 EndpointDescriptor - allows to easily add other endpoints
