@@ -170,7 +170,7 @@ class Invocation:
             timeStarted=self._start_time,
             timeCompleted=self._end_time,
             timeRequested=self._request_time,
-            input=self.input,
+            input=self.input if not isinstance(self.input, EmptyInput) else None,
             output=self.output,
             log=self._log,
         )
@@ -189,9 +189,14 @@ class Invocation:
 
         try:
             kwargs = self._input
-            result = self._action.__get__(xthing_obj=self._xthing)(
-                kwargs, cancellation_token, logger
-            )
+            if isinstance(kwargs, EmptyInput) or kwargs is None:
+                result = self._action.__get__(xthing_obj=self._xthing)(
+                    cancellation_token, logger
+                )
+            else:
+                result = self._action.__get__(xthing_obj=self._xthing)(
+                    kwargs, cancellation_token, logger
+                )
 
             with self._status_lock:
                 self._status = InvocationStatus.COMPLETED

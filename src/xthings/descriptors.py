@@ -167,11 +167,11 @@ class ActionDescriptor(XThingsDescriptor):
         return self._name
 
     @property
-    def input_model(self):
+    def input_model(self) -> Optional[type[BaseModel]]:
         return self._input_model
 
     @property
-    def output_model(self):
+    def output_model(self) -> Optional[type[BaseModel]]:
         return self._output_model
 
     def emit_changed_event(self, xthing: XThing, value: Any):
@@ -194,8 +194,15 @@ class ActionDescriptor(XThingsDescriptor):
             ...
 
     def add_to_app(self, app: FastAPI, xthing: XThing):
+        async def list_invocations():
+            return await xthing.action_manager.list_invocation(self, xthing)
+
+        app.get(pathjoin(xthing.path, self.name))(list_invocations)
+
         async def start_action(
-            request: Request, body, background_tasks: BackgroundTasks
+            request: Request,
+            background_tasks: BackgroundTasks,
+            body: Optional[Any] = None,
         ):
             # invoke the action in a thread executor
             id = uuid.uuid4()
@@ -209,17 +216,14 @@ class ActionDescriptor(XThingsDescriptor):
 
             return action.response(request=request)
 
-        start_action.__annotations__["body"] = Annotated[self.input_model, Body()]
+        if self.input_model is not None:
+            start_action.__annotations__["body"] = Annotated[self.input_model, Body()]
+
         app.post(
             pathjoin(xthing.path, self.name),
             response_model=self._invocation_model,
             status_code=201,
         )(start_action)
-
-        async def list_invocations():
-            return await xthing.action_manager.list_invocation(self, xthing)
-
-        app.get(pathjoin(xthing.path, self.name))(list_invocations)
 
     def action_description(self, xthing: XThing, path: Optional[str] = None):
         path = path or xthing.path

@@ -1,7 +1,5 @@
 from xthings.xthing import XThing
 from xthings.descriptors import (
-    PropertyDescriptor,
-    ActionDescriptor,
     PngImageStreamDescriptor,
 )
 from xthings.server import XThingsServer
@@ -19,22 +17,11 @@ class User(BaseModel):
     name: str
 
 
-def func(xthing, s: User):
-    import time
-
-    print(f"start to sleep {s} seconds")
-    time.sleep(s.id)
-    xthing.foo = s
-    print("end")
-
-
 user1 = User(id=1, name="Jane")
 user2 = User(id=2, name="John")
 
 
 class MyXThing(XThing):
-    foo = PropertyDescriptor(User, User(id=1, name="John"))
-    bar = ActionDescriptor(func, input_model=User, output_model=User)
     png_stream_cv = PngImageStreamDescriptor(ringbuffer_size=100)
     _xyz: User
 
@@ -61,6 +48,12 @@ class MyXThing(XThing):
     @xyz.setter  # type: ignore[no-redef]
     def xyz(self, v):
         self._xyz = v
+
+    @xthings_action()
+    def action_without_input(
+        self, cancellatioin_token: CancellationToken, logger: logging.Logger
+    ):
+        return
 
     @xthings_action(input_model=User, output_model=User)
     def func(
