@@ -19,6 +19,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 class XThing:
     _path: str
+    _components: dict[str, Any] = {}
     _xthings_blocking_portal: Optional[BlockingPortal] = None
     _observers: dict[str, WeakSet[ObjectSendStream]] = {}
     _property_observers: dict[str, WeakSet[ObjectSendStream]] = {}
@@ -74,6 +75,12 @@ class XThing:
         Subclass should override this method.
         """
         self._ut_probe = "shutdown"
+
+    def add_component(self, component, name):
+        self._components[name] = component
+
+    def find_component(self, name: str):
+        return self._components[name]
 
     def attach_to_app(self, server: XThingsServer, path: str):
         """Add HTTP handlers to the app for this XThing"""

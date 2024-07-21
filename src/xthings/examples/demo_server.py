@@ -7,7 +7,10 @@ from fastapi.responses import HTMLResponse
 import numpy as np
 import time
 import logging
+import threading
+from typing import Any
 
+MOCK_CAMERA_NAME = "xthings.components.cameras.mockcamera"
 
 class User(BaseModel):
     id: int
@@ -17,6 +20,60 @@ class User(BaseModel):
 user1 = User(id=1, name="Jane")
 user2 = User(id=2, name="John")
 
+class MockCamera:
+    def __init__(self):
+        self._thread: threading.Thread = None
+        self._lock = threading.RLock()
+        self._is_open: bool = False
+        self._is_streaming: bool = False
+        self._frame: Any = None
+
+    def thread_run(self):
+        print("camera stream thread started.")
+        while self._is_open and self._is_streaming:
+            frame = np.random.rand(480, 640, 3) * 255
+            with self._lock:
+                self._frame = frame.astype(np.uint8)
+            time.sleep(0.05)            
+        print("camera streaming thread stopped.")
+    def open(self):
+        self._is_open = True
+
+        print("open camera")
+
+    def close(self):
+        self._is_open = False
+
+        print("close camera")
+
+    def start_streaming(self):
+        self._is_streaming = True
+        self._thread = threading.Thread(target=self.thread_run)
+        self._thread.setDaemon(True)
+        self._thread.start()
+        while not self._thread.is_alive():
+            time.sleep(0.01)
+
+    def stop_streaming(self):
+        self._is_streaming = False
+        self._thread = None
+
+    def get_next_frame(self):
+        # Fixme: the following line is needed, otherwise the self._frame is not
+        #        updated to asyncio work threads. I am not sure the root cause
+        #        yet.
+        frame = np.random.rand(480, 640, 3) * 255
+
+        return self._frame
+
+    def capture(self):
+        ...
+
+    def set_exposure_ms(self, exposure_ms: float):
+        ...
+
+    def get_exposure_ms(self) -> float:
+        ...
 
 class MyXThing(XThing):
     png_stream_cv = PngImageStreamDescriptor(ringbuffer_size=100)
@@ -42,18 +99,47 @@ class MyXThing(XThing):
     def xyz(self):
         return self._xyz
 
-    @xyz.setter  # type: ignore[no-redef]
+    @xyz.setter
     def xyz(self, v):
         self._xyz = v
 
     @xthings_action()
-    def action_without_input(
-        self, cancellatioin_token: CancellationToken, logger: logging.Logger
-    ):
-        return
+    def open_camera(self, ct, logger):
+        camera = self.find_component(MOCK_CAMERA_NAME)
+        camera.open()
+
+    @xthings_action()
+    def close_camera(self, ct, logger):
+        camera = self.find_component(MOCK_CAMERA_NAME)
+        camera.close()
+
+    @xthings_action()
+    def start_stream_camera(self, ct, logger):
+        camera: MockCamera = self.find_component(MOCK_CAMERA_NAME)
+        camera.start_streaming()
+
+        if not self._streaming:
+            self._streaming = True
+            while self._streaming:
+                frame = camera.get_next_frame()
+                if self.png_stream_cv.add_frame(
+                    frame=frame, portal=self._xthings_blocking_portal
+                ):
+                    self.last_frame_index = self.png_stream_cv.last_frame_i
+
+    @xthings_action()
+    def stop_stream_camera(self, ct, logger):
+        camera: MockCamera = self.find_component(MOCK_CAMERA_NAME)
+        camera.stop_streaming()
+        self._streaming = False
+
+    @xthings_action()
+    def capture_camera(self, ct, logger):
+        camera: MockCamera = self.find_component(MOCK_CAMERA_NAME)
+
 
     @xthings_action(input_model=User, output_model=User)
-    def func(
+    def cancellable_action(
         self, s: User, cancellation_token: CancellationToken, logger: logging.Logger
     ):
         t = self.settings["a"]
@@ -69,29 +155,11 @@ class MyXThing(XThing):
         logger.info("func end")
         return s
 
-    @xthings_action(input_model=User, output_model=User)
-    def start_png_stream_cv(self, s: User, cancellatioin_token, logger):
-        print(self.png_stream_cv, self._streaming, self._delay)
-        if not self._streaming:
-            self._streaming = True
-            while self._streaming:
-                frame = np.random.rand(480, 640, 3) * 255
-                frame = frame.astype(np.uint8)
-
-                if self.png_stream_cv.add_frame(
-                    frame=frame, portal=self._xthings_blocking_portal
-                ):
-                    self.last_frame_index = self.png_stream_cv.last_frame_i
-                    # time.sleep(self._delay)
-
-    @xthings_action(input_model=User, output_model=User)
-    def stop_png_stream_cv(self, s: User, cancellation_token, logger):
-        print(self.png_stream_cv)
-        self._streaming = False
-
+camera = MockCamera()
+myxthing = MyXThing("_xthings._http._tcp.local.", "myxthing._xthings._http._tcp.local.")
+myxthing.add_component(camera, MOCK_CAMERA_NAME)
 
 xthings_server = XThingsServer(settings_folder="./settings")
-myxthing = MyXThing("_xthings._http._tcp.local.", "myxthing._xthings._http._tcp.local.")
 xthings_server.add_xthing(myxthing, "/xthing")
 myxthing.foo = User(id=2, name="Smith")
 

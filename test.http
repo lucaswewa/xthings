@@ -1,0 +1,12 @@
+### Open camera
+POST http://localhost:8000/xthing/open_camera
+
+### Close camera
+POST http://localhost:8000/xthing/close_camera
+
+### Start streaming
+POST http://localhost:8000/xthing/start_stream_camera
+
+### Stop streaming
+POST http://localhost:8000/xthing/stop_stream_camera
+
