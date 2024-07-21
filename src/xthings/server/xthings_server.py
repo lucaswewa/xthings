@@ -6,14 +6,16 @@ from __future__ import annotations
 from anyio.from_thread import BlockingPortal
 from contextlib import asynccontextmanager, AsyncExitStack
 from fastapi import FastAPI
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from weakref import WeakSet
 import os
 import yaml
 
-from .xthing import XThing
-from .action_manager import ActionManager
-from .xthing_zeroconf import run_mdns_task
+from ..action import ActionManager
+from .xthings_zeroconf import run_mdns_task
+
+if TYPE_CHECKING:  # pragma: no cover
+    from ..xthing import XThing
 
 _xthings_servers: WeakSet[XThingsServer] = WeakSet()
 

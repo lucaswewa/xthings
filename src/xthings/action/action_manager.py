@@ -16,12 +16,12 @@ from pydantic import model_validator
 from collections import deque
 import threading
 
-from .utils import pathjoin
-from .errors import InvocationCancelledError
+from ..utils import pathjoin
+from ..errors import InvocationCancelledError
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .descriptors import ActionDescriptor
-    from .xthing import XThing
+    from ..descriptors import ActionDescriptor
+    from ..xthing import XThing
 
 
 class InvocationStatus(str, Enum):

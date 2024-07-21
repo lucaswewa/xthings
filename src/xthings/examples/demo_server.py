@@ -4,7 +4,7 @@ from xthings.descriptors import (
 )
 from xthings.server import XThingsServer
 from xthings.decorators import xthings_property, xthings_action
-from xthings.action_manager import CancellationToken
+from xthings.action import CancellationToken
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
 import numpy as np

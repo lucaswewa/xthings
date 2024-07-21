@@ -10,7 +10,7 @@ from fastapi import Request
 from typing import Any, TYPE_CHECKING, Optional
 from weakref import WeakSet
 
-from .websocket import websocket_endpoint, WebSocket
+from .server import websocket_endpoint, WebSocket
 from .descriptors import XThingsDescriptor
 
 if TYPE_CHECKING:  # pragma: no cover

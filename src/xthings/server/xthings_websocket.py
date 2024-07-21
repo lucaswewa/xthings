@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .xthing import XThing
+    from ..xthing import XThing
 
 
 async def send_message_to_websocket(
