@@ -1,9 +1,6 @@
-from xthings.xthing import XThing
-from xthings.descriptors import (
-    PngImageStreamDescriptor,
-)
+from xthings import XThing, xthings_property, xthings_action
+from xthings.descriptors import PngImageStreamDescriptor
 from xthings.server import XThingsServer
-from xthings.decorators import xthings_property, xthings_action
 from xthings.action import CancellationToken
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
