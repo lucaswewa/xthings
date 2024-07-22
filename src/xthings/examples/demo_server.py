@@ -27,15 +27,20 @@ class MockCamera:
         self._is_open: bool = False
         self._is_streaming: bool = False
         self._frame: Any = None
+        self._cb = None
 
     def thread_run(self):
-        print("camera stream thread started.")
         while self._is_open and self._is_streaming:
             frame = np.random.rand(480, 640, 3) * 255
             with self._lock:
                 self._frame = frame.astype(np.uint8)
+                try:
+                    if self._cb is not None:
+                        self._cb(self._frame.copy())
+                except Exception as e:
+                    print(f"ah! {e}")
+
             time.sleep(0.05)            
-        print("camera streaming thread stopped.")
     def open(self):
         self._is_open = True
 
@@ -46,25 +51,22 @@ class MockCamera:
 
         print("close camera")
 
-    def start_streaming(self):
+    def start_streaming(self, cb):
         self._is_streaming = True
+        self._cb = cb
         self._thread = threading.Thread(target=self.thread_run)
         self._thread.setDaemon(True)
         self._thread.start()
-        while not self._thread.is_alive():
-            time.sleep(0.01)
 
     def stop_streaming(self):
         self._is_streaming = False
+        self._cb = None
         self._thread = None
 
     def get_next_frame(self):
-        # Fixme: the following line is needed, otherwise the self._frame is not
-        #        updated to asyncio work threads. I am not sure the root cause
-        #        yet.
-        frame = np.random.rand(480, 640, 3) * 255
-
-        return self._frame
+        time.sleep(0.05)  # Frame rate control
+        with self._lock:
+            return self._frame.copy()
 
     def capture(self):
         ...
@@ -115,17 +117,15 @@ class MyXThing(XThing):
 
     @xthings_action()
     def start_stream_camera(self, ct, logger):
-        camera: MockCamera = self.find_component(MOCK_CAMERA_NAME)
-        camera.start_streaming()
-
-        if not self._streaming:
-            self._streaming = True
-            while self._streaming:
-                frame = camera.get_next_frame()
-                if self.png_stream_cv.add_frame(
-                    frame=frame, portal=self._xthings_blocking_portal
-                ):
+        def cb(frame):
+            try:
+                if self.png_stream_cv.add_frame(frame=frame, portal=self._xthings_blocking_portal):
                     self.last_frame_index = self.png_stream_cv.last_frame_i
+            except Exception as e:
+                print(threading.currentThread(), f"exception {e}")
+
+        camera: MockCamera = self.find_component(MOCK_CAMERA_NAME)
+        camera.start_streaming(cb)
 
     @xthings_action()
     def stop_stream_camera(self, ct, logger):
