@@ -2,13 +2,14 @@ from xthings import XThing, xthings_property, xthings_action
 from xthings.descriptors import PngImageStreamDescriptor
 from xthings.server import XThingsServer
 from xthings.action import CancellationToken
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictFloat
 from fastapi.responses import HTMLResponse
 import numpy as np
 import time
 import logging
 import threading
 from typing import Any
+import datetime
 
 MOCK_CAMERA_NAME = "xthings.components.cameras.mockcamera"
 
@@ -28,6 +29,7 @@ class MockCamera:
         self._is_streaming: bool = False
         self._frame: Any = None
         self._cb = None
+        self._delay = 0.04
 
     def thread_run(self):
         while self._is_open and self._is_streaming:
@@ -40,7 +42,7 @@ class MockCamera:
                 except Exception as e:
                     print(f"ah! {e}")
 
-            time.sleep(0.05)            
+            time.sleep(self._delay)            
     def open(self):
         self._is_open = True
 
@@ -64,7 +66,6 @@ class MockCamera:
         self._thread = None
 
     def get_next_frame(self):
-        time.sleep(0.05)  # Frame rate control
         with self._lock:
             return self._frame.copy()
 
@@ -97,13 +98,16 @@ class MyXThing(XThing):
         super().teardown()
         return self
 
-    @xthings_property(model=User)
+    @xthings_property(model=StrictFloat)
     def xyz(self):
         return self._xyz
 
     @xyz.setter
     def xyz(self, v):
         self._xyz = v
+
+        camera: MockCamera = self.find_component(MOCK_CAMERA_NAME)
+        camera._delay = self._xyz
 
     @xthings_action()
     def open_camera(self, ct, logger):
@@ -121,6 +125,8 @@ class MyXThing(XThing):
             try:
                 if self.png_stream_cv.add_frame(frame=frame, portal=self._xthings_blocking_portal):
                     self.last_frame_index = self.png_stream_cv.last_frame_i
+                    if self.png_stream_cv.last_frame_i % 100 == 0:
+                        print(datetime.datetime.now(), self.png_stream_cv.last_frame_i)
             except Exception as e:
                 print(threading.currentThread(), f"exception {e}")
 
