@@ -46,7 +46,7 @@ def run_mdns_task(xthing_services: list[tuple[str, str]], port):
                 port=port,
             )
         )
-    loop = asyncio.get_event_loop()
+
     runner = AsyncRunner(ip_version)
 
-    loop.create_task(runner.register_services(infos))
+    asyncio.get_running_loop().create_task(runner.register_services(infos))
