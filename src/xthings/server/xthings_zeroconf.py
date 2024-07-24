@@ -1,35 +1,11 @@
 import asyncio
 import socket
-from typing import List, Optional
-
-from zeroconf import IPVersion, get_all_addresses
-from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
+import time
+from zeroconf import IPVersion, get_all_addresses, Zeroconf, ServiceInfo
 
 
-class AsyncRunner:
-    def __init__(self, ip_version: IPVersion) -> None:
-        self.ip_version = ip_version
-        self.aiozc: Optional[AsyncZeroconf] = None
-
-    async def register_services(self, infos: List[AsyncServiceInfo]) -> None:
-        self.aiozc = AsyncZeroconf(ip_version=self.ip_version)
-        tasks = [self.aiozc.async_register_service(info) for info in infos]
-        background_tasks = await asyncio.gather(*tasks)
-        await asyncio.gather(*background_tasks)
-        while True:
-            await asyncio.sleep(1)
-
-    async def unregister_services(self, infos: List[AsyncServiceInfo]) -> None:
-        assert self.aiozc is not None
-        tasks = [self.aiozc.async_unregister_service(info) for info in infos]
-        background_tasks = await asyncio.gather(*tasks)
-        await asyncio.gather(*background_tasks)
-        await self.aiozc.async_close()
-
-
-def run_mdns_task(xthing_services: list[tuple[str, str]], port):
+def register_mdns(xthing_services, port, properties, server):
     ip_version = IPVersion.V4Only
-
     mdns_addresses = [
         socket.inet_aton(i)
         for i in get_all_addresses()
@@ -39,14 +15,32 @@ def run_mdns_task(xthing_services: list[tuple[str, str]], port):
     infos = []
     for service_type, service_name in xthing_services:
         infos.append(
-            AsyncServiceInfo(
+            ServiceInfo(
                 service_type,
                 service_name,
                 addresses=mdns_addresses,
                 port=port,
+                properties=properties,
+                server=server,
             )
         )
 
-    runner = AsyncRunner(ip_version)
+    zeroconf = Zeroconf(ip_version=ip_version)
+    for info in infos:
+        zeroconf.register_service(info)
+    try:
+        while True:
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        print("Unregistering...")
+        for info in infos:
+            zeroconf.unregister_service(info)
+        zeroconf.close()
 
-    asyncio.get_running_loop().create_task(runner.register_services(infos))
+
+def run_mdns_in_executor(xthing_services, port, properties, server):
+    asyncio.get_running_loop().run_in_executor(
+        None, register_mdns, xthing_services, port, properties, server
+    )

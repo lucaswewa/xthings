@@ -162,7 +162,7 @@ class MyXThing(XThing):
         return s
 
 camera = MockCamera()
-myxthing = MyXThing("_xthings._http._tcp.local.", "myxthing._xthings._http._tcp.local.")
+myxthing = MyXThing("_xthings._tcp.local.", "myxthing._xthings._tcp.local.")
 myxthing.add_component(camera, MOCK_CAMERA_NAME)
 
 xthings_server = XThingsServer(settings_folder="./settings")

@@ -15,7 +15,7 @@ def on_service_state_change(zeroconf, service_type, name, state_change):
 zeroconf = Zeroconf(ip_version=IPVersion.V4Only)
 
 # Service broswer
-services = ["_xthings._http._tcp.local."]
+services = ["_xthings._tcp.local."]
 broswer = ServiceBrowser(zeroconf, services, handlers=[on_service_state_change])
 
 try:
