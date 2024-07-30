@@ -59,6 +59,9 @@ class ImageStreamDescriptor(XThingsDescriptor):
             response_class=HTMLResponse,
         )(self.viewer_page)
 
+    def description(self):
+        return {}
+
 
 class PngImageStreamDescriptor(ImageStreamDescriptor):
     def __init__(self, **kwargs):

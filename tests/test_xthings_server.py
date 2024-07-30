@@ -31,7 +31,7 @@ def test_xthings_server_add_xthing():
         assert xthing._xthings_blocking_portal is not None
         r = client.get("/xthing")
         assert r.status_code == 200
-        assert r.json() == {"actions": {}, "properties": {}, "title": "XThing"}
+        assert r.json() == {"properties": {}, "actions": {}, "streams": {}}
     assert xthing._ut_probe == "shutdown"
     assert xthing._xthings_blocking_portal is None
 

@@ -124,9 +124,5 @@ class ActionDescriptor(XThingsDescriptor):
             status_code=201,
         )(start_action)
 
-    def action_description(self, xthing: XThing, path: Optional[str] = None):
-        path = path or xthing.path
-
-        # TODO: complete the description
-
+    def description(self):
         return {}

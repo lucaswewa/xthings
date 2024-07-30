@@ -17,3 +17,6 @@ GET http://localhost:8000/xthing/xyz
 PUT http://localhost:8000/xthing/xyz
 
 0.02
+
+### Get TD
+GET http://localhost:8000/xthing

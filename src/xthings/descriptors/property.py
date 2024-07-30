@@ -13,7 +13,6 @@ from typing import (
 from typing_extensions import Self
 
 from ..utils import pathjoin
-
 from .xthings import XThingsDescriptor
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -94,9 +93,5 @@ class PropertyDescriptor(XThingsDescriptor):
         self._setter = func
         return self
 
-    def property_description(self, xthing: XThing, path: Optional[str] = None) -> Any:
-        path = path or xthing.path
-
-        # TODO: complete the description
-
+    def description(self) -> Any:
         return {}

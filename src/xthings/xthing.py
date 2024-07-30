@@ -11,7 +11,12 @@ from typing import Any, TYPE_CHECKING, Optional
 from weakref import WeakSet
 
 from .server import websocket_endpoint, WebSocket
-from .descriptors import XThingsDescriptor
+from .descriptors import (
+    XThingsDescriptor,
+    ActionDescriptor,
+    PropertyDescriptor,
+    ImageStreamDescriptor,
+)
 
 if TYPE_CHECKING:  # pragma: no cover
     from .server import XThingsServer
@@ -90,15 +95,17 @@ class XThing:
         for name, xdescriptor in XThingsDescriptor.get_xdescriptors(self):
             xdescriptor.add_to_app(server.app, self)
 
-        @server.app.get(
-            self.path, response_model_exclude_none=True, response_model_by_alias=True
-        )
-        def thing_description(request: Request):
-            return self.thing_description(base=str(request.base_url))
+        def get_TD(request: Request):
+            return self.description(base=str(request.base_url))
 
-        @server.app.websocket(self.path + "/ws")
+        server.app.get(
+            self.path, response_model_exclude_none=True, response_model_by_alias=True
+        )(get_TD)
+
         async def websocket(ws: WebSocket):
             await websocket_endpoint(self, ws)
+
+        server.app.websocket(self.path + "/ws")(websocket)
 
     def property_observers(self, attr: str) -> WeakSet[ObjectSendStream[Any]]:
         if attr not in self._property_observers.keys():
@@ -130,19 +137,19 @@ class XThing:
     ) -> None:
         self.action_observers(attr).remove(observer_stream)
 
-    def thing_description(self, path: Optional[str] = None, base: Optional[str] = None):
-        path = path or getattr(self, "path", "{base_uri}")
+    def description(self, path: Optional[str] = None, base: Optional[str] = None):
         properties = {}
         actions = {}
+        streams = {}
 
         for name, item in XThingsDescriptor.get_xdescriptors(self):
-            if hasattr(item, "property_description"):
-                properties[name] = item.property_description(self, path)
-            if hasattr(item, "action_description"):
-                actions[name] = item.action_description(self, path)
+            if isinstance(item, PropertyDescriptor):
+                properties[name] = item.description()
+            elif isinstance(item, ActionDescriptor):
+                actions[name] = item.description()
+            elif isinstance(item, ImageStreamDescriptor):
+                streams[name] = item.description()
+            else:
+                pass
 
-        return {
-            "title": getattr(self, "title", self.__class__.__name__),
-            "properties": properties,
-            "actions": actions,
-        }
+        return {"properties": properties, "actions": actions, "streams": streams}
