@@ -4,7 +4,11 @@ import time
 from zeroconf import IPVersion, get_all_addresses, Zeroconf, ServiceInfo
 
 
-def register_mdns(xthing_services, port, properties, server):
+class CancelToken:
+    cancelled = False
+
+
+def register_mdns(xthing_services, port, properties, server, cancel_token):
     ip_version = IPVersion.V4Only
     mdns_addresses = [
         socket.inet_aton(i)
@@ -29,7 +33,7 @@ def register_mdns(xthing_services, port, properties, server):
     for info in infos:
         zeroconf.register_service(info)
     try:
-        while True:
+        while not cancel_token.cancelled:
             time.sleep(0.1)
     except KeyboardInterrupt:
         pass
@@ -41,6 +45,12 @@ def register_mdns(xthing_services, port, properties, server):
 
 
 def run_mdns_in_executor(xthing_services, port, properties, server):
+    cancel_token = CancelToken()
     asyncio.get_running_loop().run_in_executor(
-        None, register_mdns, xthing_services, port, properties, server
+        None, register_mdns, xthing_services, port, properties, server, cancel_token
     )
+    return cancel_token
+
+
+def stop_mdns_thread(cancel_token):
+    cancel_token.cancelled = True

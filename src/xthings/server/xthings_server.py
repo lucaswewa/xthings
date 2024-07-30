@@ -12,7 +12,7 @@ import os
 import yaml
 
 from ..action import ActionManager
-from .xthings_zeroconf import run_mdns_in_executor
+from .xthings_zeroconf import run_mdns_in_executor, stop_mdns_thread
 
 if TYPE_CHECKING:  # pragma: no cover
     from ..xthing import XThing
@@ -77,8 +77,9 @@ class XThingsServer:
                     xthing_services.append((xthing._service_type, xthing._service_name))
                 properties = {"key": "value"}
                 server = "myserver.local."
-                run_mdns_in_executor(xthing_services, port, properties, server)
+                ct = run_mdns_in_executor(xthing_services, port, properties, server)
                 yield
+                stop_mdns_thread(ct)
 
             # detach the blocking portal from each of the XThing
             for xthing in self._xthings.values():
