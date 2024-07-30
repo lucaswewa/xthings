@@ -4,7 +4,7 @@ from xthings.server import XThingsServer
 from xthings.xthing import XThing
 from xthings.descriptors import ActionDescriptor, PngImageStreamDescriptor
 from pydantic import StrictInt
-from xthings.decorators import xthings_action
+from xthings import xaction
 import pytest
 import time
 import numpy as np
@@ -22,16 +22,16 @@ class MyXThing(XThing):
     )
     png_stream_cv = PngImageStreamDescriptor(ringbuffer_size=100)
 
-    @xthings_action(input_model=StrictInt, output_model=StrictInt)
+    @xaction(input_model=StrictInt, output_model=StrictInt)
     def func(self, i: StrictInt, cancellation_token, logger) -> StrictInt:
         return i + 1
 
-    @xthings_action(input_model=StrictInt, output_model=StrictInt)
+    @xaction(input_model=StrictInt, output_model=StrictInt)
     def func_error(self, i: StrictInt, cancellation_token, logger) -> StrictInt:
         raise Exception("error")
         return i + 1
 
-    @xthings_action(input_model=StrictInt, output_model=StrictInt)
+    @xaction(input_model=StrictInt, output_model=StrictInt)
     def func_slow(self, i: StrictInt, cancellation_token, logger) -> StrictInt:
         for i in range(10):
             time.sleep(0)
@@ -39,7 +39,7 @@ class MyXThing(XThing):
 
         return i + 1
 
-    @xthings_action(input_model=StrictInt, output_model=StrictInt)
+    @xaction(input_model=StrictInt, output_model=StrictInt)
     def start_png_stream_cv(self, s: StrictInt, cancellatioin_token, logger):
         if not self._streaming:
             self._streaming = True
@@ -52,7 +52,7 @@ class MyXThing(XThing):
                 ):
                     self.last_frame_index = self.png_stream_cv.last_frame_i
 
-    @xthings_action(input_model=StrictInt, output_model=StrictInt)
+    @xaction(input_model=StrictInt, output_model=StrictInt)
     def stop_png_stream_cv(self, s: StrictInt, cancellation_token, logger):
         print(self.png_stream_cv)
         self._streaming = False

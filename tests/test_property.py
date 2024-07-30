@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from xthings.server import XThingsServer
 from xthings.xthing import XThing
 from xthings.descriptors import PropertyDescriptor
-from xthings.decorators import xthings_property
+from xthings import xproperty
 from pydantic import BaseModel
 
 service_type = "_http._tcp.local."
@@ -34,7 +34,7 @@ class MyXThing(XThing):
         del self._xyz
         return super().teardown()
 
-    @xthings_property(model=User)
+    @xproperty(model=User)
     def xyz(self) -> User:
         return self._xyz
 

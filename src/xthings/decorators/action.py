@@ -5,7 +5,7 @@ from typing import Callable, Optional
 from ..descriptors import ActionDescriptor
 
 
-def mark_xthings_action(
+def create_xaction_descriptor(
     input_model: Optional[type[BaseModel]],
     output_model: Optional[type[BaseModel]],
     func: Callable,
@@ -18,9 +18,9 @@ def mark_xthings_action(
     )
 
 
-@wraps(mark_xthings_action)
-def xthings_action(
+@wraps(create_xaction_descriptor)
+def xaction(
     input_model: Optional[type[BaseModel]] = None,
     output_model: Optional[type[BaseModel]] = None,
 ):
-    return partial(mark_xthings_action, input_model, output_model)
+    return partial(create_xaction_descriptor, input_model, output_model)

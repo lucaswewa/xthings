@@ -1,7 +1,7 @@
-from .action import xthings_action
-from .property import xthings_property
+from .action import xaction
+from .property import xproperty
 
 __all__ = [
-    "xthings_action",
-    "xthings_property",
+    "xaction",
+    "xproperty",
 ]

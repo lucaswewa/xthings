@@ -1,4 +1,4 @@
-from xthings import XThing, xthings_property, xthings_action
+from xthings import XThing, xproperty, xaction
 from xthings.descriptors import PngImageStreamDescriptor
 from xthings.server import XThingsServer
 from xthings.action import CancellationToken
@@ -98,7 +98,7 @@ class MyXThing(XThing):
         super().teardown()
         return self
 
-    @xthings_property(model=StrictFloat)
+    @xproperty(model=StrictFloat)
     def xyz(self):
         return self._xyz
 
@@ -109,17 +109,17 @@ class MyXThing(XThing):
         camera: MockCamera = self.find_component(MOCK_CAMERA_NAME)
         camera._delay = self._xyz
 
-    @xthings_action()
+    @xaction()
     def open_camera(self, ct, logger):
         camera = self.find_component(MOCK_CAMERA_NAME)
         camera.open()
 
-    @xthings_action()
+    @xaction()
     def close_camera(self, ct, logger):
         camera = self.find_component(MOCK_CAMERA_NAME)
         camera.close()
 
-    @xthings_action()
+    @xaction()
     def start_stream_camera(self, ct, logger):
         def cb(frame):
             try:
@@ -133,18 +133,18 @@ class MyXThing(XThing):
         camera: MockCamera = self.find_component(MOCK_CAMERA_NAME)
         camera.start_streaming(cb)
 
-    @xthings_action()
+    @xaction()
     def stop_stream_camera(self, ct, logger):
         camera: MockCamera = self.find_component(MOCK_CAMERA_NAME)
         camera.stop_streaming()
         self._streaming = False
 
-    @xthings_action()
+    @xaction()
     def capture_camera(self, ct, logger):
         camera: MockCamera = self.find_component(MOCK_CAMERA_NAME)
 
 
-    @xthings_action(input_model=User, output_model=User)
+    @xaction(input_model=User, output_model=User)
     def cancellable_action(
         self, s: User, cancellation_token: CancellationToken, logger: logging.Logger
     ):

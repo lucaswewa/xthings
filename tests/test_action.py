@@ -4,7 +4,7 @@ from xthings.server import XThingsServer
 from xthings.xthing import XThing
 from xthings.descriptors import ActionDescriptor
 from pydantic import StrictInt
-from xthings.decorators import xthings_action
+from xthings import xaction
 import pytest
 import uuid
 import time
@@ -20,16 +20,16 @@ class MyXThing(XThing):
         output_model=StrictInt,
     )
 
-    @xthings_action(input_model=StrictInt, output_model=StrictInt)
+    @xaction(input_model=StrictInt, output_model=StrictInt)
     def func(self, i: StrictInt, cancellation_token, logger) -> StrictInt:
         return i + 1
 
-    @xthings_action(input_model=StrictInt, output_model=StrictInt)
+    @xaction(input_model=StrictInt, output_model=StrictInt)
     def func_error(self, i: StrictInt, cancellation_token, logger) -> StrictInt:
         raise Exception("error")
         return i + 1
 
-    @xthings_action(input_model=StrictInt, output_model=StrictInt)
+    @xaction(input_model=StrictInt, output_model=StrictInt)
     def func_slow(self, i: StrictInt, cancellation_token, logger) -> StrictInt:
         for i in range(10):
             time.sleep(0)

@@ -1,4 +1,4 @@
 from .xthing import XThing
-from .decorators import xthings_action, xthings_property
+from .decorators import xaction, xproperty
 
-__all__ = ["XThing", "xthings_action", "xthings_property"]
+__all__ = ["XThing", "xaction", "xproperty"]
