@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, Any, Sequence, MutableSequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 from typing_extensions import Self
 import uuid
 from threading import RLock
@@ -15,6 +15,7 @@ import logging
 from pydantic import model_validator
 from collections import deque
 import threading
+from functools import partial
 
 from ..utils import pathjoin
 from ..errors import InvocationCancelledError
@@ -22,6 +23,9 @@ from ..errors import InvocationCancelledError
 if TYPE_CHECKING:  # pragma: no cover
     from ..descriptors import ActionDescriptor
     from ..xthing import XThing
+
+
+EventHandle = Callable[[str], None]
 
 
 class InvocationStatus(str, Enum):
@@ -182,37 +186,41 @@ class Invocation:
 
         cancellation_token = self._cancellation_token
 
+        event_handle: EventHandle = partial(
+            self._action.emit_changed_event, self._xthing
+        )
+
         with self._status_lock:
             self._status = InvocationStatus.RUNNING
             self._start_time = datetime.now()
-            self._action.emit_changed_event(self._xthing, self._status)
+            event_handle(self._status)
 
         try:
             kwargs = self._input
             if isinstance(kwargs, EmptyInput) or kwargs is None:
                 result = self._action.__get__(xthing_obj=self._xthing)(
-                    cancellation_token, logger
+                    event_handle, cancellation_token, logger
                 )
             else:
                 result = self._action.__get__(xthing_obj=self._xthing)(
-                    kwargs, cancellation_token, logger
+                    kwargs, event_handle, cancellation_token, logger
                 )
 
             with self._status_lock:
                 self._status = InvocationStatus.COMPLETED
                 self._return_value = result
-            self._action.emit_changed_event(self._xthing, self._status)
+            event_handle(self._status)
         except InvocationCancelledError as e:
             with self._status_lock:
                 self._status = InvocationStatus.CANCELLED
                 self._exception = e
-            self._action.emit_changed_event(self._xthing, self._status)
+            event_handle(self._status)
         except Exception as e:
             logger.error("invocation error")
             with self._status_lock:
                 self._status = InvocationStatus.ERROR
                 self._exception = e
-            self._action.emit_changed_event(self._xthing, self._status)
+            event_handle(self._status)
         finally:
             with self._status_lock:
                 self._end_time = datetime.now()
