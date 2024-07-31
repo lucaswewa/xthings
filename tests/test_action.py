@@ -15,22 +15,22 @@ service_name = "thing._http._tcp.local."
 
 class MyXThing(XThing):
     ad = ActionDescriptor(
-        lambda xthing, x, evt, cancellation_token, logger: x + 1,
+        lambda xthing, x, apn, cancellation_token, logger: x + 1,
         input_model=StrictInt,
         output_model=StrictInt,
     )
 
     @xaction(input_model=StrictInt, output_model=StrictInt)
-    def func(self, i: StrictInt, evt, cancellation_token, logger) -> StrictInt:
+    def func(self, i: StrictInt, apn, cancellation_token, logger) -> StrictInt:
         return i + 1
 
     @xaction(input_model=StrictInt, output_model=StrictInt)
-    def func_error(self, i: StrictInt, evt, cancellation_token, logger) -> StrictInt:
+    def func_error(self, i: StrictInt, apn, cancellation_token, logger) -> StrictInt:
         raise Exception("error")
         return i + 1
 
     @xaction(input_model=StrictInt, output_model=StrictInt)
-    def func_slow(self, i: StrictInt, evt, cancellation_token, logger) -> StrictInt:
+    def func_slow(self, i: StrictInt, apn, cancellation_token, logger) -> StrictInt:
         for i in range(10):
             time.sleep(0)
             cancellation_token.check(0)

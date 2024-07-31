@@ -25,7 +25,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from ..xthing import XThing
 
 
-EventHandle = Callable[[str], None]
+ActionProgressNotifier = Callable[[str], None]
 
 
 class InvocationStatus(str, Enum):
@@ -186,7 +186,7 @@ class Invocation:
 
         cancellation_token = self._cancellation_token
 
-        event_handle: EventHandle = partial(
+        event_handle: ActionProgressNotifier = partial(
             self._action.emit_changed_event, self._xthing
         )
 

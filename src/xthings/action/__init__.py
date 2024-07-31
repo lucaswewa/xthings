@@ -8,7 +8,7 @@ from .action_manager import (
     CancellationToken,
     Invocation,
     ActionManager,
-    EventHandle,
+    ActionProgressNotifier,
 )
 
 __all__ = [
@@ -22,5 +22,5 @@ __all__ = [
     "CancellationToken",
     "Invocation",
     "ActionManager",
-    "EventHandle",
+    "ActionProgressNotifier",
 ]

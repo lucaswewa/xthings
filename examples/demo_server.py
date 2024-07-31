@@ -1,7 +1,7 @@
 from xthings import XThing, xproperty, xaction
 from xthings.descriptors import PngImageStreamDescriptor
 from xthings.server import XThingsServer
-from xthings.action import CancellationToken, EventHandle
+from xthings.action import CancellationToken, ActionProgressNotifier
 from pydantic import BaseModel, StrictFloat
 from fastapi.responses import HTMLResponse
 import numpy as np
@@ -110,44 +110,44 @@ class MyXThing(XThing):
         camera._delay = self._xyz
 
     @xaction()
-    def open_camera(self, evt: EventHandle, ct: CancellationToken, logger: logging.Logger):
+    def open_camera(self, apn: ActionProgressNotifier, ct: CancellationToken, logger: logging.Logger):
         camera = self.find_component(MOCK_CAMERA_NAME)
         camera.open()
 
     @xaction()
-    def close_camera(self, evt: EventHandle, ct: CancellationToken, logger: logging.Logger):
+    def close_camera(self, apn: ActionProgressNotifier, ct: CancellationToken, logger: logging.Logger):
         camera = self.find_component(MOCK_CAMERA_NAME)
         camera.close()
 
     @xaction()
-    def start_stream_camera(self, evt: EventHandle, ct: CancellationToken, logger: logging.Logger):
+    def start_stream_camera(self, apn: ActionProgressNotifier, ct: CancellationToken, logger: logging.Logger):
         def cb(frame):
             try:
                 if self.png_stream_cv.add_frame(frame=frame):
-                    evt("add frame")
+                    apn("add frame")
                     self.last_frame_index = self.png_stream_cv.last_frame_i
                     if self.png_stream_cv.last_frame_i % 100 == 0:
                         print(datetime.datetime.now(), self.png_stream_cv.last_frame_i)
             except Exception as e:
                 print(threading.currentThread(), f"exception {e}")
-        evt("start streaming")
+        apn("start streaming")
         camera: MockCamera = self.find_component(MOCK_CAMERA_NAME)
         camera.start_streaming(cb)
 
     @xaction()
-    def stop_stream_camera(self, evt: EventHandle, ct: CancellationToken, logger: logging.Logger):
+    def stop_stream_camera(self, apn: ActionProgressNotifier, ct: CancellationToken, logger: logging.Logger):
         camera: MockCamera = self.find_component(MOCK_CAMERA_NAME)
         camera.stop_streaming()
         self._streaming = False
 
     @xaction()
-    def capture_camera(self, evt: EventHandle, ct: CancellationToken, logger: logging.Logger):
+    def capture_camera(self, apn: ActionProgressNotifier, ct: CancellationToken, logger: logging.Logger):
         camera: MockCamera = self.find_component(MOCK_CAMERA_NAME)
 
 
     @xaction(input_model=User, output_model=User)
     def cancellable_action(
-        self, s: User, evt: EventHandle, cancellation_token: CancellationToken, logger: logging.Logger
+        self, s: User, apn: ActionProgressNotifier, cancellation_token: CancellationToken, logger: logging.Logger
     ):
         t = self.settings["a"]
         logger.info("func start")
