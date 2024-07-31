@@ -123,7 +123,7 @@ class MyXThing(XThing):
     def start_stream_camera(self, evt: EventHandle, ct: CancellationToken, logger: logging.Logger):
         def cb(frame):
             try:
-                if self.png_stream_cv.add_frame(frame=frame, portal=self._xthings_blocking_portal):
+                if self.png_stream_cv.add_frame(frame=frame):
                     evt("add frame")
                     self.last_frame_index = self.png_stream_cv.last_frame_i
                     if self.png_stream_cv.last_frame_i % 100 == 0:
@@ -180,6 +180,7 @@ html = """
     </head>
     <body>
         <h1>WebSocket Chat</h1>
+        <p>{"messageType": "addActionObservation", "data": {"start_stream_camera": true}}</p>
         <form action="" onsubmit="sendMessage(event)">
             <input type="text" id="messageText" autocomplete="off"/>
             <button>Send</button>

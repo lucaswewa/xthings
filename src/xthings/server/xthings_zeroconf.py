@@ -35,8 +35,6 @@ def register_mdns(xthing_services, port, properties, server, cancel_token):
     try:
         while not cancel_token.cancelled:
             time.sleep(0.1)
-    except KeyboardInterrupt:
-        pass
     finally:
         print("Unregistering...")
         for info in infos:

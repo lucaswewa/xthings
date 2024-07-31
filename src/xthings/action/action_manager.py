@@ -227,6 +227,8 @@ class Invocation:
 
 
 class ActionManager:
+    """A thread-safe action manager"""
+
     def __init__(self):
         self._invocations = {}
         self._invocations_lock = asyncio.Lock()
@@ -261,11 +263,15 @@ class ActionManager:
             ]
 
     def attach_to_app(self, app: FastAPI) -> Self:
-        @app.get("/invocations", response_model=list[InvocationModel])
+        # get all invocations
         async def list_all_invocations(request: Request):
             return await self.list_invocation(action=None, xthing=None)
 
-        @app.get("/invocations/{id}", response_model=InvocationModel)
+        app.get("/invocations", response_model=list[InvocationModel])(
+            list_all_invocations
+        )
+
+        # get invocations by id
         async def action_invocation(id: uuid.UUID, request: Request):
             try:
                 async with self._invocations_lock:
@@ -275,10 +281,14 @@ class ActionManager:
                     status_code=404, detail="No action invocation found with ID {id}"
                 )
 
-        @app.delete("/invocations/{id}")
+        app.get("/invocations/{id}", response_model=InvocationModel)(action_invocation)
+
+        # delete invocation by id
         async def delete_invocation(id: uuid.UUID):
             async with self._invocations_lock:
                 invocation = self._invocations[str(id).lower()]
                 invocation.cancel()
+
+        app.delete("/invocations/{id}")(delete_invocation)
 
         return self

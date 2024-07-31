@@ -9,10 +9,13 @@ import threading
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from anyio.from_thread import BlockingPortal
 import anyio
 
 import numpy as np
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # pragma: no cover
+    from ..xthing import XThing
 
 
 @dataclass
@@ -51,12 +54,14 @@ class ImageStream:
         imencode_func,
         stream_response_type_func,
         get_content_type_func,
+        xthing=None,
         ringbuffer_size: int = 10,
     ):
         self._lock = threading.Lock()
         self.condition = anyio.Condition()
         self._ringbuffer: list[RingBuffEntry] = []
-        self._streaming = False
+        self._streaming: bool = False
+        self._xthing: Optional[XThing] = xthing
         self.imencode = imencode_func
         self.stream_response_type = stream_response_type_func
         self.get_content_type = get_content_type_func
@@ -121,7 +126,7 @@ class ImageStream:
     async def image_stream_response(self) -> ImageStreamResponse:
         return ImageStreamResponse(self.frame_async_generator(), self.get_content_type)
 
-    def add_frame(self, frame: np.ndarray, portal: Optional[BlockingPortal]) -> bool:
+    def add_frame(self, frame: np.ndarray) -> bool:
         """Add a frame to the ring buffer"""
         with self._lock:
             # Return the next buffer in the ringbuffer to write to
@@ -133,8 +138,13 @@ class ImageStream:
             if success:
                 entry.frame = array.tobytes()
                 entry.index = self.last_frame_i + 1
-                if portal is not None:
-                    portal.start_task_soon(self.notify_new_frame, entry.index)
+                if (
+                    self._xthing is not None
+                    and self._xthing._blocking_portal is not None
+                ):
+                    self._xthing._blocking_portal.start_task_soon(
+                        self.notify_new_frame, entry.index
+                    )
 
             return success
 

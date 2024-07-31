@@ -39,7 +39,7 @@ class ImageStreamDescriptor(XThingsDescriptor):
             return obj.__dict__[self.name]
         except KeyError:
             obj.__dict__[self.name] = ImageStream(
-                self.imencode, None, self.get_content_type, **self._kwargs
+                self.imencode, None, self.get_content_type, obj, **self._kwargs
             )
 
             return obj.__dict__[self.name]

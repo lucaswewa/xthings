@@ -73,24 +73,24 @@ def test_property_add_to_app():
 
 def test_property_decorator():
     server = XThingsServer()
+    xthing = MyXThing(service_type, service_name)
+    server.add_xthing(xthing, "/xthing")
 
-    with MyXThing(service_type, service_name) as t:
-        server.add_xthing(t, "/xthing")
-        with TestClient(server.app) as client:
-            r = client.get("/xthing/xyz")
-            assert User.model_validate(r.json()) == user1
+    with TestClient(server.app) as client:
+        r = client.get("/xthing/xyz")
+        assert User.model_validate(r.json()) == user1
 
-            client.put("/xthing/xyz", json=user2.model_dump())
+        client.put("/xthing/xyz", json=user2.model_dump())
 
-            r = client.get("/xthing/xyz")
-            assert User.model_validate(r.json()) == user2
+        r = client.get("/xthing/xyz")
+        assert User.model_validate(r.json()) == user2
 
-            r = client.get("/xthing/foo")
-            assert User.model_validate(r.json()) == user1
+        r = client.get("/xthing/foo")
+        assert User.model_validate(r.json()) == user1
 
-            client.put("/xthing/foo", json=user2.model_dump())
-            r = client.get("/xthing/foo")
-            assert User.model_validate(r.json()) == user2
+        client.put("/xthing/foo", json=user2.model_dump())
+        r = client.get("/xthing/foo")
+        assert User.model_validate(r.json()) == user2
 
 
 def test_property_observer():

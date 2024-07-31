@@ -24,8 +24,11 @@ if TYPE_CHECKING:  # pragma: no cover
 
 class XThing:
     _path: str
+    _properties: dict[str, Any] = {}
+    _actions: dict[str, Any] = {}
+    _streams: dict[str, Any] = {}
     _components: dict[str, Any] = {}
-    _xthings_blocking_portal: Optional[BlockingPortal] = None
+    _blocking_portal: Optional[BlockingPortal] = None
     _observers: dict[str, WeakSet[ObjectSendStream]] = {}
     _property_observers: dict[str, WeakSet[ObjectSendStream]] = {}
     _action_observers: dict[str, WeakSet[ObjectSendStream]] = {}
@@ -37,19 +40,12 @@ class XThing:
         self._service_name = service_name
 
     async def __aenter__(self):
-        """Context management is used to setup the XThing"""
-        return await run_sync(self.__enter__)
+        """Asynchronous Context management is used to setup the XThing"""
+        return await run_sync(self.setup)
 
     async def __aexit__(self, exc_t, exc_v, exc_tb):
-        """Context management is used to shutdown the XThing"""
-        return await run_sync(self.__exit__, exc_t, exc_v, exc_tb)
-
-    def __enter__(self):
-        self.setup()
-        return self
-
-    def __exit__(self, *args):
-        self.teardown()
+        """Asynchronous Context management is used to shutdown the XThing"""
+        return await run_sync(self.teardown)
 
     @property
     def path(self):
@@ -82,9 +78,11 @@ class XThing:
         self._ut_probe = "shutdown"
 
     def add_component(self, component, name):
+        """Associate components (objects) with this XThing object"""
         self._components[name] = component
 
     def find_component(self, name: str):
+        """Get the components by name"""
         return self._components[name]
 
     def attach_to_app(self, server: XThingsServer, path: str):
@@ -92,9 +90,18 @@ class XThing:
         self._path = path
         self._action_manager = server.action_manager
 
-        for name, xdescriptor in XThingsDescriptor.get_xdescriptors(self):
+        for name, xdescriptor in XThingsDescriptor.get_xthings_descriptors(self):
+            if isinstance(xdescriptor, PropertyDescriptor):
+                self._properties[name] = xdescriptor
+            elif isinstance(xdescriptor, ActionDescriptor):
+                self._actions[name] = xdescriptor
+            elif isinstance(xdescriptor, ImageStreamDescriptor):
+                self._streams[name] = xdescriptor
+            else:
+                pass
             xdescriptor.add_to_app(server.app, self)
 
+        # register XThing description endpoint
         def get_TD(request: Request):
             return self.description(base=str(request.base_url))
 
@@ -102,6 +109,7 @@ class XThing:
             self.path, response_model_exclude_none=True, response_model_by_alias=True
         )(get_TD)
 
+        # register XThing websocket endpoint
         async def websocket(ws: WebSocket):
             await websocket_endpoint(self, ws)
 
@@ -127,29 +135,15 @@ class XThing:
     ) -> None:
         self.action_observers(attr).add(observer_stream)
 
-    def remove_property_observer_by_attr(
-        self, attr: str, observer_stream: ObjectSendStream
-    ) -> None:
-        self.property_observers(attr).remove(observer_stream)
-
-    def remove_action_observer_by_attr(
-        self, attr: str, observer_stream: ObjectSendStream
-    ) -> None:
-        self.action_observers(attr).remove(observer_stream)
-
     def description(self, path: Optional[str] = None, base: Optional[str] = None):
-        properties = {}
-        actions = {}
-        streams = {}
-
-        for name, item in XThingsDescriptor.get_xdescriptors(self):
-            if isinstance(item, PropertyDescriptor):
-                properties[name] = item.description()
-            elif isinstance(item, ActionDescriptor):
-                actions[name] = item.description()
-            elif isinstance(item, ImageStreamDescriptor):
-                streams[name] = item.description()
-            else:
-                pass
-
-        return {"properties": properties, "actions": actions, "streams": streams}
+        return {
+            "properties": {
+                key: item.description() for (key, item) in self._properties.items()
+            },
+            "actions": {
+                key: item.description() for (key, item) in self._actions.items()
+            },
+            "streams": {
+                key: item.description() for (key, item) in self._streams.items()
+            },
+        }

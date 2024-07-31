@@ -47,9 +47,7 @@ class MyXThing(XThing):
                 frame = np.random.rand(480, 640, 3) * 255
                 frame = frame.astype(np.uint8)
 
-                if self.png_stream_cv.add_frame(
-                    frame=frame, portal=self._xthings_blocking_portal
-                ):
+                if self.png_stream_cv.add_frame(frame=frame):
                     self.last_frame_index = self.png_stream_cv.last_frame_i
 
     @xaction(input_model=StrictInt, output_model=StrictInt)
@@ -76,8 +74,6 @@ def test_action_add_to_app():
         assert r.status_code == 201
         frame = np.random.rand(480, 640, 3) * 255
         frame = frame.astype(np.uint8)
-        xthing.png_stream_cv.add_frame(
-            frame=frame, portal=xthing._xthings_blocking_portal
-        )
+        xthing.png_stream_cv.add_frame(frame=frame)
 
         xthing.png_stream_cv.stop()

@@ -12,7 +12,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 class XThingsDescriptor(ABC):
     @classmethod
-    def get_xdescriptors(cls, obj: XThing):
+    def get_xthings_descriptors(cls, obj: XThing):
         objcls = obj.__class__
         for name in dir(objcls):
             if name.startswith("__"):

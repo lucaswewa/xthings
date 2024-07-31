@@ -19,7 +19,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 _xthings_servers: WeakSet[XThingsServer] = WeakSet()
 
-port = 8000
+port = 8000  # TODO: configurable in settings.yaml
 
 
 class XThingsServer:
@@ -57,9 +57,9 @@ class XThingsServer:
     async def lifespan(self, app: FastAPI):
         """Manage setup and teardown
 
-        This does two important things:
-        * It sets up the blocking portal so background threads can run async code.
-          This is important for events.
+        This method performs two important things:
+        * It sets up the blocking portal such that background threads can run async code
+          in the event loop thread. This is important for events.
         * It runs setup/teardown code for the XThing(s) hosted in this server.
         """
         self._lifecycle_status = "startup..."
@@ -68,22 +68,24 @@ class XThingsServer:
 
             # attach the blocking portal to each of the XThing
             for xthing in self._xthings.values():
-                xthing._xthings_blocking_portal = portal
+                xthing._blocking_portal = portal
 
             async with AsyncExitStack() as stack:
                 xthing_services = []
                 for xthing in self._xthings.values():
                     await stack.enter_async_context(xthing)
                     xthing_services.append((xthing._service_type, xthing._service_name))
-                properties = {"key": "value"}
-                server = "myserver.local."
-                ct = run_mdns_in_executor(xthing_services, port, properties, server)
+                properties = {"key": "value"}  # TODO: settings.yaml
+                server = "myserver.local."  # TODO: settings.yaml
+                cancellation_token = run_mdns_in_executor(
+                    xthing_services, port, properties, server
+                )
                 yield
-                stop_mdns_thread(ct)
+                stop_mdns_thread(cancellation_token)
 
             # detach the blocking portal from each of the XThing
             for xthing in self._xthings.values():
-                xthing._xthings_blocking_portal = None
+                xthing._blocking_portal = None
 
             self._lifecycle_status = "shutdown..."
         self._blocking_portal = None

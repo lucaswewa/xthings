@@ -75,7 +75,7 @@ class ActionDescriptor(XThingsDescriptor):
 
     def emit_changed_event(self, xthing: XThing, value: Any):
         try:
-            runner = xthing._xthings_blocking_portal
+            runner = xthing._blocking_portal
             if runner is not None:
                 runner.start_task_soon(self._emit_changed_event_async, xthing, value)
         except Exception:
