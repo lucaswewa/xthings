@@ -6,6 +6,7 @@ from __future__ import annotations
 from anyio.from_thread import BlockingPortal
 from contextlib import asynccontextmanager, AsyncExitStack
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, TYPE_CHECKING
 from weakref import WeakSet
 import os
@@ -32,6 +33,21 @@ class XThingsServer:
 
     def __init__(self, settings_folder: Optional[str] = None):
         self._app = FastAPI(lifespan=self.lifespan)
+
+        # TODO: replace the following code with configurations
+        origins = [
+            "http://localhost:8080",
+            "http://localhost:8000",
+            "http://localhost:5000",
+        ]
+
+        self._app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
         self._settings_folder = settings_folder or "./settings"
         self._action_manager = ActionManager().attach_to_app(self._app)
