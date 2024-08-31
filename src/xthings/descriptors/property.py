@@ -88,7 +88,7 @@ class LcrudDescriptor(XThingsDescriptor):
             create_func = self._create_func
 
             def create_item(body):
-                create_func(xthing, body)
+                return create_func(xthing, body)
 
             create_item.__annotations__["body"] = Annotated[self._model, Body()]
             app.post(pathjoin(xthing.path, self.name))(create_item)
@@ -105,7 +105,7 @@ class LcrudDescriptor(XThingsDescriptor):
             update_func = self._update_func
 
             def update_item(id: uuid.UUID, body):
-                update_func(xthing, id, body)
+                return update_func(xthing, id, body)
 
             update_item.__annotations__["body"] = Annotated[self._model, Body()]
             app.put(pathjoin(xthing.path, self.name) + "/{id}")(update_item)
@@ -114,7 +114,7 @@ class LcrudDescriptor(XThingsDescriptor):
             del_func = self._delete_func
 
             def delete_item(id: uuid.UUID):
-                del_func(xthing, id)
+                return del_func(xthing, id)
 
             app.delete(pathjoin(xthing.path, self.name) + "/{id}")(delete_item)
 
