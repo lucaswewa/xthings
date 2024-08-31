@@ -34,13 +34,6 @@ class XThingsServer:
     def __init__(self, settings_folder: Optional[str] = None):
         self._app = FastAPI(lifespan=self.lifespan)
 
-        # TODO: replace the following code with configurations
-        origins = [
-            "http://localhost:8080",
-            "http://localhost:8000",
-            "http://localhost:5000",
-        ]
-
         self._app.add_middleware(
             CORSMiddleware,
             allow_origins=["*"],

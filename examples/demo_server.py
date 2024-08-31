@@ -1,15 +1,17 @@
-from xthings import XThing, xproperty, xaction
-from xthings.descriptors import PngImageStreamDescriptor
+from xthings import XThing, xproperty, xaction, xlcrud
+from xthings.descriptors import PngImageStreamDescriptor, LcrudDescriptor
 from xthings.server import XThingsServer
 from xthings.action import CancellationToken, ActionProgressNotifier
 from pydantic import BaseModel, StrictFloat
 from fastapi.responses import HTMLResponse
+from fastapi import HTTPException
 import numpy as np
 import time
 import logging
 import threading
 from typing import Any
 import datetime
+import uuid
 
 MOCK_CAMERA_NAME = "xthings.components.cameras.mockcamera"
 
@@ -78,6 +80,10 @@ class MockCamera:
     def get_exposure_ms(self) -> float:
         ...
 
+class Item(BaseModel):
+    name: str
+    desc: str
+
 class MyXThing(XThing):
     png_stream_cv = PngImageStreamDescriptor(ringbuffer_size=100)
     _xyz: User
@@ -90,6 +96,7 @@ class MyXThing(XThing):
         self._streaming = False
         self._delay = 0.1
         self._xyz = user1
+        self._ffc = dict()
 
         return self
 
@@ -97,6 +104,36 @@ class MyXThing(XThing):
         self._xyz = None
         super().teardown()
         return self
+
+    @xlcrud(item_model=Item)
+    def flat_field_calibration(self):
+        return self._ffc
+    
+    @flat_field_calibration.create_func
+    def flat_field_calibration(self, v: Item):
+        id = uuid.uuid4()
+        self._ffc[str(id)] = v
+
+    @flat_field_calibration.retrieve_func
+    def flat_field_calibration(self, id: uuid.UUID) -> Item:
+        try:
+            return self._ffc[str(id)]
+        except KeyError as e:
+            raise HTTPException(status_code=404)
+    
+    @flat_field_calibration.update_func
+    def flat_field_calibration(self, id: uuid.UUID, v: Item):
+        try:
+            self._ffc[str(id)] = v
+        except KeyError as e:
+            raise HTTPException(status_code=404)
+
+    @flat_field_calibration.delete_func
+    def flat_field_calibration(self, id: uuid.UUID):
+        try:
+            del self._ffc[str(id)]
+        except KeyError as e:
+            raise HTTPException(status_code=404)
 
     @xproperty(model=StrictFloat)
     def xyz(self):

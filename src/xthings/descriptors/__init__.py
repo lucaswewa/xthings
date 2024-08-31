@@ -1,6 +1,6 @@
 from .xthings import XThingsDescriptor
 from .action import ActionDescriptor
-from .property import PropertyDescriptor
+from .property import PropertyDescriptor, LcrudDescriptor
 from .stream import (
     ImageStream,
     ImageStreamResponse,
@@ -16,4 +16,5 @@ __all__ = [
     "ImageStreamResponse",
     "ImageStreamDescriptor",
     "PngImageStreamDescriptor",
+    "LcrudDescriptor",
 ]
